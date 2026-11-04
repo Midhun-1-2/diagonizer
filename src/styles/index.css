@@ -1,0 +1,975 @@
+@import 'tailwindcss';
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-line: var(--line);
+  --color-line-2: var(--line-2);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-text: var(--accent-text);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-on-stage: var(--on-stage);
+  --color-on-stage-2: var(--on-stage-2);
+  --color-stage-glow: var(--stage-glow);
+  --font-sans: 'DM Sans Variable', system-ui, 'Segoe UI', sans-serif;
+  --font-display: 'Sora Variable', 'DM Sans Variable', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', monospace;
+  --ease-lab: cubic-bezier(0.22, 0.8, 0.24, 1);
+  --breakpoint-xs: 26rem;
+}
+
+/* Slab status colours and shadows, by light or dark slabs. */
+:root,
+[data-mode='light'] {
+  color-scheme: light;
+  --ok: #146c43;
+  --ok-soft: #e2f2e9;
+  --warn: #855600;
+  --warn-soft: #fbf1dc;
+  --danger: #b3261e;
+  --danger-soft: #fbe9e7;
+  --shadow-sheet: 0 1px 2px rgb(5 25 18 / 0.1), 0 16px 34px -16px rgb(5 25 18 / 0.4);
+  --shadow-float: 0 4px 10px rgb(0 0 0 / 0.16), 0 34px 70px -22px rgb(0 0 0 / 0.65);
+  --scrim: rgb(2 16 11 / 0.62);
+  --slab-top: rgb(255 255 255 / 0.9);
+}
+[data-mode='dark'] {
+  color-scheme: dark;
+  --ok: #63d49d;
+  --ok-soft: #12301f;
+  --warn: #e8b45a;
+  --warn-soft: #33270f;
+  --danger: #f0857d;
+  --danger-soft: #3a1a18;
+  --shadow-sheet: 0 1px 2px rgb(0 0 0 / 0.4), 0 16px 34px -16px rgb(0 0 0 / 0.75);
+  --shadow-float: 0 4px 10px rgb(0 0 0 / 0.4), 0 34px 70px -22px rgb(0 0 0 / 0.9);
+  --scrim: rgb(0 0 0 / 0.68);
+  --slab-top: rgb(255 255 255 / 0.1);
+}
+
+/* 1. Medical Green */
+[data-theme='green'] {
+  --paper-accent: #0f6b4f;
+  --stage-1: #04211a;
+  --stage-2: #0b4535;
+  --stage-glow: #27cf96;
+  --on-stage: #f2fbf7;
+  --on-stage-2: #b9d9cd;
+  --bg: #f4f7f3;
+  --surface: #ffffff;
+  --surface-2: #eef2ec;
+  --ink: #16211d;
+  --ink-2: #47534e;
+  --ink-3: #65716b;
+  --line: #e3e6df;
+  --line-2: #cdd3c8;
+  --accent: #0f6b4f;
+  --accent-hover: #0b5a42;
+  --accent-soft: #e2efe9;
+  --accent-ink: #ffffff;
+  --accent-text: #0f6b4f;
+}
+[data-theme='green'][data-mode='dark'] {
+  --bg: #101614;
+  --surface: #17201c;
+  --surface-2: #1f2925;
+  --ink: #e8edea;
+  --ink-2: #b4bfb9;
+  --ink-3: #909c95;
+  --line: #27322d;
+  --line-2: #3a4841;
+  --accent: #4cc093;
+  --accent-hover: #63cfa5;
+  --accent-soft: #16302a;
+  --accent-ink: #07231a;
+  --accent-text: #6dd2a9;
+}
+
+/* 2. Clinical Blue */
+[data-theme='blue'] {
+  --paper-accent: #1c5fa8;
+  --stage-1: #04152a;
+  --stage-2: #0e3560;
+  --stage-glow: #4aa3ff;
+  --on-stage: #f2f7fd;
+  --on-stage-2: #bbcfe4;
+  --bg: #f4f7fb;
+  --surface: #ffffff;
+  --surface-2: #edf1f6;
+  --ink: #1a2433;
+  --ink-2: #465266;
+  --ink-3: #5f6c80;
+  --line: #e1e6ed;
+  --line-2: #cbd3de;
+  --accent: #1c5fa8;
+  --accent-hover: #174f8d;
+  --accent-soft: #e2ecf7;
+  --accent-ink: #ffffff;
+  --accent-text: #1c5fa8;
+}
+[data-theme='blue'][data-mode='dark'] {
+  --bg: #0f141b;
+  --surface: #161e29;
+  --surface-2: #1e2733;
+  --ink: #e8edf3;
+  --ink-2: #b4bfcc;
+  --ink-3: #8f9bab;
+  --line: #27313e;
+  --line-2: #3a4757;
+  --accent: #5aa2ec;
+  --accent-hover: #76b3f1;
+  --accent-soft: #162a42;
+  --accent-ink: #071a2e;
+  --accent-text: #7cb6f2;
+}
+
+/* 3. Teal Care */
+[data-theme='teal'] {
+  --paper-accent: #0b6e78;
+  --stage-1: #032125;
+  --stage-2: #0a4850;
+  --stage-glow: #2fd0d8;
+  --on-stage: #eefbfb;
+  --on-stage-2: #b2d6d8;
+  --bg: #f3f8f8;
+  --surface: #ffffff;
+  --surface-2: #ebf2f2;
+  --ink: #17282b;
+  --ink-2: #435559;
+  --ink-3: #5c6f73;
+  --line: #dfe8e8;
+  --line-2: #c8d5d5;
+  --accent: #0b6e78;
+  --accent-hover: #095c64;
+  --accent-soft: #dff0f1;
+  --accent-ink: #ffffff;
+  --accent-text: #0b6e78;
+}
+[data-theme='teal'][data-mode='dark'] {
+  --bg: #0e1617;
+  --surface: #152122;
+  --surface-2: #1c292b;
+  --ink: #e6eeef;
+  --ink-2: #b1c0c2;
+  --ink-3: #8c9d9f;
+  --line: #253335;
+  --line-2: #37494b;
+  --accent: #3fbfc9;
+  --accent-hover: #5ccdd6;
+  --accent-soft: #123034;
+  --accent-ink: #05211f;
+  --accent-text: #66d0d8;
+}
+
+/* 4. Midnight Professional is dark by identity. */
+[data-theme='midnight'] {
+  color-scheme: dark;
+  --paper-accent: #1f3f73;
+  --stage-1: #050a16;
+  --stage-2: #101c36;
+  --stage-glow: #86b4f5;
+  --on-stage: #f1f4f9;
+  --on-stage-2: #bcc7d8;
+  --bg: #0b1426;
+  --surface: #121f36;
+  --surface-2: #1a2a45;
+  --ink: #edf1f7;
+  --ink-2: #bcc7d8;
+  --ink-3: #94a2b8;
+  --line: #22314c;
+  --line-2: #344664;
+  --accent: #86b4f5;
+  --accent-hover: #a0c5f8;
+  --accent-soft: #1a2f52;
+  --accent-ink: #0a1a33;
+  --accent-text: #a0c5f8;
+}
+
+/* 5. Soft Emerald */
+[data-theme='emerald'] {
+  --paper-accent: #04724f;
+  --stage-1: #08261a;
+  --stage-2: #124e37;
+  --stage-glow: #3ce0a0;
+  --on-stage: #fbf8ef;
+  --on-stage-2: #c6d8c8;
+  --bg: #faf7f0;
+  --surface: #fffdf8;
+  --surface-2: #f3efe5;
+  --ink: #25221b;
+  --ink-2: #514c40;
+  --ink-3: #6d675a;
+  --line: #e9e4d8;
+  --line-2: #d6cfbf;
+  --accent: #04724f;
+  --accent-hover: #035f42;
+  --accent-soft: #e2f1e6;
+  --accent-ink: #ffffff;
+  --accent-text: #04724f;
+}
+[data-theme='emerald'][data-mode='dark'] {
+  --bg: #14130f;
+  --surface: #1e1d17;
+  --surface-2: #26241d;
+  --ink: #efece4;
+  --ink-2: #c1bdb0;
+  --ink-3: #9d988a;
+  --line: #312e26;
+  --line-2: #454137;
+  --accent: #3ccb95;
+  --accent-hover: #5cd8a9;
+  --accent-soft: #15302a;
+  --accent-ink: #052318;
+  --accent-text: #66d8ad;
+}
+
+/* 6. Minimal Monochrome */
+[data-theme='mono'] {
+  --paper-accent: #232326;
+  --stage-1: #0c0c0e;
+  --stage-2: #2b2b30;
+  --stage-glow: #e8e8e8;
+  --on-stage: #f6f6f5;
+  --on-stage-2: #c4c4c6;
+  --bg: #f6f6f5;
+  --surface: #ffffff;
+  --surface-2: #eeeeec;
+  --ink: #18181a;
+  --ink-2: #4a4a4e;
+  --ink-3: #68686d;
+  --line: #e4e4e2;
+  --line-2: #cfcfcc;
+  --accent: #232326;
+  --accent-hover: #3a3a3e;
+  --accent-soft: #e9e9e7;
+  --accent-ink: #ffffff;
+  --accent-text: #232326;
+}
+[data-theme='mono'][data-mode='dark'] {
+  --bg: #111112;
+  --surface: #1b1b1d;
+  --surface-2: #252527;
+  --ink: #eeeeec;
+  --ink-2: #bebebb;
+  --ink-3: #99999a;
+  --line: #2b2b2d;
+  --line-2: #414144;
+  --accent: #ededeb;
+  --accent-hover: #ffffff;
+  --accent-soft: #2c2c2f;
+  --accent-ink: #141415;
+  --accent-text: #ededeb;
+}
+
+:root {
+  --row-y: 0.7rem;
+  --accent-deep: color-mix(in srgb, var(--accent) 66%, #000);
+  --slab-edge: color-mix(in srgb, var(--accent) 22%, var(--line-2));
+  --key-edge: color-mix(in srgb, var(--ink) 16%, var(--line-2));
+  --dock: color-mix(in srgb, var(--stage-1) 82%, var(--stage-2));
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --series-5: #e87ba4;
+  --series-6: #008300;
+  --series-7: #6250d6;
+}
+[data-mode='dark'],
+[data-theme='midnight'] {
+  --accent-deep: color-mix(in srgb, var(--accent) 58%, #000);
+  --slab-edge: color-mix(in srgb, var(--accent) 34%, #000);
+  --key-edge: #000;
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
+  --series-5: #d55181;
+  --series-6: #008300;
+  --series-7: #9085e9;
+}
+[data-density='compact'] {
+  --row-y: 0.42rem;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  background: var(--stage-1);
+}
+body {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+}
+button,
+[role='button'],
+summary,
+label[for] {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+}
+:focus-visible {
+  outline: 2px solid var(--stage-glow);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+.slab :focus-visible,
+[role='dialog'] :focus-visible {
+  outline-color: var(--accent);
+}
+::selection {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+@layer base {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-2) transparent;
+  }
+}
+html {
+  scrollbar-color: color-mix(in srgb, var(--on-stage-2) 45%, transparent) var(--stage-1);
+}
+#print-root {
+  display: none;
+}
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type='number'] {
+  -moz-appearance: textfield;
+}
+
+/* ---------- The stage: a deep lab room behind everything ---------- */
+.stage-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background:
+    radial-gradient(70% 60% at 78% 12%, color-mix(in srgb, var(--stage-glow) 26%, transparent), transparent 70%),
+    radial-gradient(60% 60% at 8% 92%, color-mix(in srgb, var(--stage-glow) 12%, transparent), transparent 70%),
+    linear-gradient(160deg, var(--stage-2), var(--stage-1) 62%);
+}
+.stage-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  animation: fade-in 0.9s ease both;
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* ---------- Slabs: thick physical plates with a lit top edge ---------- */
+/* In a layer so utilities such as `absolute` and `rounded-*` can still override them. */
+@layer components {
+.slab {
+  position: relative;
+  border-radius: 20px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow:
+    inset 0 1px 0 var(--slab-top),
+    0 1px 0 var(--slab-edge),
+    0 2px 0 var(--slab-edge),
+    0 3px 0 var(--slab-edge),
+    0 4px 0 var(--slab-edge),
+    0 5px 0 var(--slab-edge),
+    0 6px 0 var(--slab-edge),
+    var(--shadow-float);
+}
+/* Dark glass for controls that sit directly on the stage. */
+.slab-stage {
+  background: color-mix(in srgb, var(--dock) 90%, transparent);
+  color: var(--on-stage);
+  border: 1px solid color-mix(in srgb, var(--on-stage) 14%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--on-stage) 16%, transparent),
+    0 3px 0 color-mix(in srgb, var(--stage-1) 70%, #000),
+    0 18px 40px -14px rgb(0 0 0 / 0.65);
+}
+/* Carved input well. */
+.well {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  box-shadow: inset 0 2px 3px color-mix(in srgb, var(--ink) 9%, transparent);
+}
+.well:hover {
+  border-color: var(--line-2);
+}
+.well:focus,
+.well:focus-within {
+  border-color: var(--accent);
+  background: var(--surface);
+  box-shadow:
+    inset 0 1px 2px color-mix(in srgb, var(--ink) 6%, transparent),
+    0 0 0 3px var(--accent-soft);
+  outline: none;
+}
+
+/* Keycaps: real travel when pressed, so every button feels physical. */
+.key {
+  position: relative;
+  background: linear-gradient(to bottom, var(--surface), var(--surface-2));
+  color: var(--ink);
+  border: 1px solid var(--line-2);
+  box-shadow:
+    inset 0 1px 0 var(--slab-top),
+    0 3px 0 var(--key-edge),
+    0 8px 14px -8px rgb(0 0 0 / 0.35);
+  translate: var(--mag-x, 0) var(--mag-y, 0);
+  transition:
+    transform 0.11s ease-out,
+    box-shadow 0.11s ease-out,
+    background-color 0.15s,
+    filter 0.15s,
+    translate 0.25s var(--ease-lab);
+}
+.key:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 var(--slab-top),
+    0 4px 0 var(--key-edge),
+    0 12px 18px -8px rgb(0 0 0 / 0.4);
+}
+.key:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow:
+    inset 0 1px 0 var(--slab-top),
+    0 0 0 var(--key-edge),
+    0 2px 4px -2px rgb(0 0 0 / 0.3);
+}
+.key-primary {
+  background: linear-gradient(to bottom, var(--accent-hover), var(--accent));
+  color: var(--accent-ink);
+  border-color: var(--accent-deep);
+  --key-edge: var(--accent-deep);
+  --slab-top: color-mix(in srgb, #fff 26%, transparent);
+}
+.key-danger {
+  background: var(--danger-soft);
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 40%, transparent);
+  --key-edge: color-mix(in srgb, var(--danger) 55%, #000);
+}
+.key-stage {
+  background: color-mix(in srgb, var(--dock) 88%, transparent);
+  color: var(--on-stage);
+  border-color: color-mix(in srgb, var(--on-stage) 18%, transparent);
+  --key-edge: color-mix(in srgb, var(--stage-1) 60%, #000);
+  --slab-top: color-mix(in srgb, var(--on-stage) 16%, transparent);
+}
+
+.slab-accent {
+  background: linear-gradient(150deg, var(--accent-hover), var(--accent) 55%, var(--accent-deep));
+  color: var(--accent-ink);
+  --slab-edge: var(--accent-deep);
+  --slab-top: rgb(255 255 255 / 0.28);
+}
+}
+
+/* ---------- Entry and scroll choreography ---------- */
+/* Slabs stay where they are and come into focus, like turning a microscope's fine-focus knob. */
+.deal {
+  animation: focus-in 0.7s ease-out backwards;
+  animation-delay: calc(0.14s + var(--i, 0) * 55ms);
+}
+@keyframes focus-in {
+  from {
+    opacity: 0;
+    filter: blur(12px) saturate(0.6);
+  }
+}
+/* Below the fold they brighten as they scroll in, with no JavaScript at all. */
+@supports (animation-timeline: view()) {
+  .rise {
+    animation: rise-in linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 40%;
+  }
+  .hero-scroll {
+    animation: hero-away linear both;
+    animation-timeline: scroll(root);
+    animation-range: 0 42vh;
+    transform-origin: 0 100%;
+  }
+}
+@keyframes rise-in {
+  from {
+    opacity: 0.35;
+  }
+}
+@keyframes hero-away {
+  to {
+    transform: perspective(900px) rotateX(24deg) translateY(-34px);
+    opacity: 0.1;
+  }
+}
+/* Keeps type readable where 3D objects pass behind it. */
+.stage-title {
+  text-shadow:
+    0 1px 2px color-mix(in srgb, var(--stage-1) 60%, transparent),
+    0 4px 28px color-mix(in srgb, var(--stage-1) 75%, transparent);
+}
+/* Display type climbs out of a mask, one word at a time. */
+.word-mask {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+  padding-bottom: 0.14em;
+  margin-bottom: -0.14em;
+}
+.word {
+  display: inline-block;
+  animation: word-up 0.8s var(--ease-lab) backwards;
+  animation-delay: calc(0.18s + var(--i, 0) * 70ms);
+}
+@keyframes word-up {
+  from {
+    transform: translateY(110%) rotate(5deg);
+  }
+}
+
+/* Route change: bars of liquid sweep the screen while the camera flies. */
+.curtain {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  display: flex;
+  pointer-events: none;
+  overflow: hidden;
+}
+.curtain span {
+  flex: 1;
+  margin-right: -1px;
+  background: var(--accent-deep);
+  transform: translateY(101%);
+  animation: curtain 0.72s cubic-bezier(0.65, 0, 0.25, 1) both;
+  animation-delay: calc(var(--i) * 34ms);
+}
+.curtain b {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 7vw, 5.5rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: #fff;
+  animation: curtain-label 0.72s ease both 0.06s;
+}
+@keyframes curtain {
+  0% {
+    transform: translateY(101%);
+  }
+  42%,
+  58% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-101%);
+  }
+}
+@keyframes curtain-label {
+  0%,
+  22% {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  44%,
+  58% {
+    opacity: 1;
+    transform: none;
+  }
+  80%,
+  100% {
+    opacity: 0;
+    transform: translateY(-24px);
+  }
+}
+
+/* Row lights up on hover, with an accent bar growing from its left edge. */
+.lift-row {
+  transition:
+    background-color 0.14s,
+    box-shadow 0.16s;
+}
+.lift-row:hover {
+  background: var(--accent-soft);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+/* Hovering puts a card under the analyser: one scan line passes and targeting brackets lock on. CSS only. */
+.scan {
+  --scan-color: var(--accent);
+  overflow: clip;
+}
+.slab-accent.scan {
+  --scan-color: #fff;
+}
+@media (hover: hover) {
+  .scan::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+    border-bottom: 1.5px solid var(--scan-color);
+    transform: translateY(-101%);
+  }
+  .scan:hover::before {
+    animation: scan-pass 0.75s cubic-bezier(0.45, 0, 0.3, 1) both;
+  }
+  .scan::after {
+    --arm: 14px;
+    --thick: 2px;
+    content: '';
+    position: absolute;
+    inset: 8px;
+    z-index: 3;
+    pointer-events: none;
+    opacity: 0;
+    transform: scale(1.05);
+    transition:
+      opacity 0.16s,
+      transform 0.26s var(--ease-lab);
+    background:
+      linear-gradient(var(--scan-color), var(--scan-color)) 0 0 / var(--arm) var(--thick),
+      linear-gradient(var(--scan-color), var(--scan-color)) 0 0 / var(--thick) var(--arm),
+      linear-gradient(var(--scan-color), var(--scan-color)) 100% 0 / var(--arm) var(--thick),
+      linear-gradient(var(--scan-color), var(--scan-color)) 100% 0 / var(--thick) var(--arm),
+      linear-gradient(var(--scan-color), var(--scan-color)) 0 100% / var(--arm) var(--thick),
+      linear-gradient(var(--scan-color), var(--scan-color)) 0 100% / var(--thick) var(--arm),
+      linear-gradient(var(--scan-color), var(--scan-color)) 100% 100% / var(--arm) var(--thick),
+      linear-gradient(var(--scan-color), var(--scan-color)) 100% 100% / var(--thick) var(--arm);
+    background-repeat: no-repeat;
+  }
+  .scan:hover::after {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes scan-pass {
+  from {
+    transform: translateY(-101%);
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 0;
+  }
+}
+
+/* Flip cards turn over in real 3D. */
+.flip {
+  perspective: 1100px;
+}
+.flip-inner {
+  position: relative;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.62s var(--ease-lab);
+}
+.flip[data-flipped='true'] .flip-inner {
+  transform: rotateY(180deg);
+}
+.flip-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.flip-back {
+  transform: rotateY(180deg);
+}
+.flip[data-flipped='true'] .flip-front,
+.flip[data-flipped='false'] .flip-back {
+  visibility: hidden;
+  transition: visibility 0s linear 0.3s;
+}
+
+/* Ticker on the dashboard. */
+.marquee {
+  overflow: hidden;
+  mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
+}
+.marquee > div {
+  display: flex;
+  width: max-content;
+  animation: marquee 46s linear infinite;
+}
+.marquee:hover > div {
+  animation-play-state: paused;
+}
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* Dock magnification, driven only by hover and :has(). */
+.dock-item {
+  transition: transform 0.22s var(--ease-lab);
+  transform-origin: 0 50%;
+}
+@media (hover: hover) {
+  .dock-item:hover {
+    transform: scale(1.18) translateX(2px);
+    z-index: 2;
+  }
+  .dock-item:has(+ .dock-item:hover),
+  .dock-item:hover + .dock-item {
+    transform: scale(1.06);
+  }
+}
+
+/* Companion cursor ring: decoration only, the system cursor stays. */
+.cursor-ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 80;
+  width: 34px;
+  height: 34px;
+  margin: -17px 0 0 -17px;
+  border-radius: 50%;
+  border: 1.5px solid var(--stage-glow);
+  pointer-events: none;
+  opacity: 0;
+  transition:
+    opacity 0.25s,
+    width 0.2s,
+    height 0.2s,
+    margin 0.2s;
+  will-change: transform;
+}
+.cursor-ring[data-on='true'] {
+  opacity: 0.75;
+}
+.cursor-ring[data-hot='true'] {
+  width: 54px;
+  height: 54px;
+  margin: -27px 0 0 -27px;
+}
+
+/* Odometer digits. */
+.roller {
+  display: inline-block;
+  height: 1.2em;
+  line-height: 1.2em;
+  width: 1ch;
+  overflow: hidden;
+  vertical-align: bottom;
+}
+.roller > span {
+  display: block;
+  transition: transform 0.82s var(--ease-lab);
+  will-change: transform;
+}
+.roller > span > span {
+  display: block;
+  height: 1.2em;
+}
+
+.pulse-ring {
+  position: relative;
+}
+.pulse-ring::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  animation: ring-out 2.2s ease-out infinite;
+}
+@keyframes ring-out {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.8;
+  }
+  70%,
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+.draw-check path {
+  stroke-dasharray: 20;
+  animation: draw 0.4s 0.05s var(--ease-lab) both;
+}
+@keyframes draw {
+  from {
+    stroke-dashoffset: 20;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.skeleton {
+  background: linear-gradient(100deg, var(--surface-2) 30%, var(--line) 50%, var(--surface-2) 70%);
+  background-size: 300% 100%;
+  animation: slide-light 1.4s linear infinite;
+  border-radius: 6px;
+}
+@keyframes slide-light {
+  from {
+    background-position: 110% 0;
+  }
+  to {
+    background-position: -40% 0;
+  }
+}
+.shake {
+  animation: shake 0.32s ease-in-out;
+}
+@keyframes shake {
+  25% {
+    transform: translateX(-6px);
+  }
+  50% {
+    transform: translateX(5px);
+  }
+  75% {
+    transform: translateX(-3px);
+  }
+}
+.toast-drain {
+  transform-origin: left;
+  animation: drain linear both;
+}
+@keyframes drain {
+  to {
+    transform: scaleX(0);
+  }
+}
+
+/* Preloader: one tube fills, then the room lifts open. */
+.preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  background: var(--stage-1);
+  color: var(--on-stage);
+  animation: preloader-out 0.6s cubic-bezier(0.7, 0, 0.2, 1) 1.05s forwards;
+}
+@keyframes preloader-out {
+  to {
+    transform: translateY(-101%);
+  }
+}
+.preloader i {
+  transform-origin: 50% 100%;
+  animation: preloader-fill 1.05s cubic-bezier(0.5, 0, 0.2, 1) both;
+}
+@keyframes preloader-fill {
+  from {
+    transform: scaleY(0);
+  }
+}
+
+/* Theme change: new palette fills the screen with a meniscus-shaped edge. */
+::view-transition-old(root) {
+  animation: none;
+}
+::view-transition-new(root) {
+  animation: liquid-rise 0.7s var(--ease-lab) both;
+}
+@keyframes liquid-rise {
+  from {
+    clip-path: polygon(0 100%, 12% 103%, 30% 105%, 50% 106%, 70% 105%, 88% 103%, 100% 100%, 100% 110%, 0 110%);
+  }
+  to {
+    clip-path: polygon(0 -6%, 12% -3%, 30% -1%, 50% 0, 70% -1%, 88% -3%, 100% -6%, 100% 110%, 0 110%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after,
+  ::view-transition-new(root) {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    animation-timeline: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+  .curtain,
+  .preloader,
+  .cursor-ring {
+    display: none !important;
+  }
+}
+[data-motion='reduced'] *,
+[data-motion='reduced'] *::before,
+[data-motion='reduced'] *::after,
+[data-motion='reduced']::view-transition-new(root) {
+  animation-duration: 0.01ms !important;
+  animation-delay: 0ms !important;
+  animation-iteration-count: 1 !important;
+  animation-timeline: auto !important;
+  transition-duration: 0.01ms !important;
+}
+[data-motion='reduced'] .curtain,
+[data-motion='reduced'] .preloader,
+[data-motion='reduced'] .cursor-ring {
+  display: none !important;
+}
+
+/* Touch tablets in landscape get the desktop layout, but still need finger-sized controls. */
+@media (pointer: coarse) {
+  button,
+  [role='button'] {
+    min-height: 40px;
+    min-width: 40px;
+  }
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+  html,
+  body {
+    background: #fff !important;
+    color: #111 !important;
+  }
+  body > *:not(#print-root) {
+    display: none !important;
+  }
+  #print-root {
+    display: block !important;
+  }
+}

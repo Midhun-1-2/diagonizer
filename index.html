@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Meniscus: billing, patients and test catalogue for diagnostic laboratories." />
+    <title>Meniscus Lab</title>
+    <script>
+      // Applies the saved theme before first paint so there is no flash of the default.
+      (function () {
+        var root = document.documentElement, theme = 'green', mode = 'light', motion = 'full', density = 'comfortable';
+        try {
+          var saved = JSON.parse(localStorage.getItem('meniscus.appearance') || '{}');
+          theme = saved.theme || theme; mode = saved.mode || mode; motion = saved.motion || motion; density = saved.density || density;
+        } catch (e) {}
+        if (mode === 'system') mode = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        if (theme === 'midnight') mode = 'dark';
+        root.dataset.theme = theme; root.dataset.mode = mode; root.dataset.motion = motion; root.dataset.density = density;
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <div id="print-root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
