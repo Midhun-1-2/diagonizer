@@ -1,7 +1,7 @@
 import type { Invoice, LabSettings, Patient } from '../types'
 import { paymentLines } from './billing'
 import { ageAndGender, fmtDateTime } from './format'
-import { rangeFlag, reportedAt } from './results'
+import { ageRangeLabel, rangeFlag, reportedAt } from './results'
 
 const left = 44
 const right = 551
@@ -230,7 +230,7 @@ export async function downloadResultPdf(invoice: Invoice, patient: Patient, sett
   doc.text(`${patient.code}  ${patient.phone}`, left, y)
   doc.setFont('helvetica', 'normal')
   const group = invoice.ageGroup
-  if (group) doc.text(`Normal ranges for ${group.name} (${group.ageFrom}-${group.ageTo} yrs)`, right, y, { align: 'right' })
+  if (group) doc.text(`Normal ranges for ${group.name} (${ageRangeLabel(group).replace('–', '-')})`, right, y, { align: 'right' })
   y += 28
 
   const subTestWidth = 205

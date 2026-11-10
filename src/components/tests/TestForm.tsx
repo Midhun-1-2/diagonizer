@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { Plus, Trash2 } from 'lucide-react'
 import { useLab, type TestInput } from '../../data/store'
 import type { LabTest } from '../../types'
+import { ageRangeLabel } from '../../utils/results'
 import { Button, IconButton } from '../ui/Button'
 import { Field, Input, Select, Textarea } from '../ui/Field'
 
@@ -123,7 +124,7 @@ export function TestForm({ formId, test, takenCodes, onSubmit }: TestFormProps) 
                         {group.name}
                       </span>
                       <span className="block truncate text-[11px] text-ink-3">
-                        {group.ageFrom}–{group.ageTo} yrs, {group.gender === 'Any' ? 'any' : group.gender}
+                        {ageRangeLabel(group)}, {group.gender === 'Any' ? 'any' : group.gender}
                       </span>
                       <Input aria-label={`Sub-test ${index + 1} normal range for ${group.name}`} placeholder="Range" className="mt-0.5 h-9! bg-surface! px-2.5! font-mono text-[13px]!" {...register(`subTests.${index}.ranges.${group.id}`)} />
                     </label>

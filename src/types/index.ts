@@ -40,7 +40,11 @@ export interface SampleTypeEntry extends MasterEntry {
   liquid: string
 }
 
+export type AgeUnit = 'Years' | 'Months' | 'Days' | 'Hours'
+
 export interface AgeGroupEntry extends MasterEntry {
+  /** What ageFrom and ageTo are counted in. Groups saved before units existed are in years. */
+  ageUnit?: AgeUnit
   ageFrom: number
   ageTo: number
   gender: 'Male' | 'Female' | 'Any'

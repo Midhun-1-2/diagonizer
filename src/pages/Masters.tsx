@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react'
 import { Navigate, useParams } from 'react-router-dom'
-import { Controller, useForm } from 'react-hook-form'
+import { Controller, useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Check, ListChecks, Pencil, Plus, Trash2 } from 'lucide-react'
 import { deleteMaster, masterUsage, saveMaster, useLab, type MasterKind } from '../data/store'
 import { useToast } from '../contexts/ToastProvider'
-import type { AgeGroupEntry, DepartmentEntry, MasterEntry, SampleTypeEntry } from '../types'
+import type { AgeGroupEntry, AgeUnit, DepartmentEntry, MasterEntry, SampleTypeEntry } from '../types'
+import { AGE_UNITS, ageRangeLabel, ageUnitOf, groupYears } from '../utils/results'
 import { Button, IconButton } from '../components/ui/Button'
 import { EmptyState, PageHero, Panel } from '../components/ui/Common'
 import { Field, Input, SearchInput, Select } from '../components/ui/Field'
@@ -26,6 +27,7 @@ interface FormValues {
   name: string
   container: string
   cap: string
+  ageUnit: AgeUnit
   ageFrom?: number
   ageTo?: number
   gender: string
@@ -54,8 +56,9 @@ function MasterForm({ formId, kind, entry, siblings, onSubmit }: MasterFormProps
         .refine((name) => !takenNames.includes(name.toLowerCase()), 'This name already exists'),
       container: isSample ? z.string().trim().min(2, 'Describe the container, such as Green cap, heparin') : z.string(),
       cap: z.string(),
-      ageFrom: z.number({ error: 'Enter the starting age' }).int('Use whole years').min(0, 'Age cannot be negative').optional(),
-      ageTo: z.number({ error: 'Enter the ending age' }).int('Use whole years').max(150, 'Use 150 or less').optional(),
+      ageUnit: z.enum(AGE_UNITS),
+      ageFrom: z.number({ error: 'Enter the starting age' }).int('Use whole numbers').min(0, 'Age cannot be negative').optional(),
+      ageTo: z.number({ error: 'Enter the ending age' }).int('Use whole numbers').optional(),
       gender: z.string(),
       orderNo: z.number({ error: 'Enter the order no.' }).int('Use a whole number').min(1, 'Start from 1').max(999, 'Use 999 or less').optional(),
     })
@@ -65,9 +68,11 @@ function MasterForm({ formId, kind, entry, siblings, onSubmit }: MasterFormProps
       const from = values.ageFrom ?? 0
       const to = values.ageTo ?? 0
       if (to < from) context.addIssue({ code: 'custom', path: ['ageTo'], message: 'Must not be below the starting age' })
+      const mine = groupYears({ ageUnit: values.ageUnit, ageFrom: from, ageTo: to })
+      if (mine.to > 150) context.addIssue({ code: 'custom', path: ['ageTo'], message: 'Use 150 years or less' })
       // One patient must match one group, so ranges for the same gender cannot overlap.
-      const clash = (siblings as AgeGroupEntry[]).find((other) => (other.gender === 'Any' || values.gender === 'Any' || other.gender === values.gender) && from <= other.ageTo && to >= other.ageFrom)
-      if (clash) context.addIssue({ code: 'custom', path: ['ageFrom'], message: `Overlaps ${clash.name} (${clash.ageFrom}–${clash.ageTo} yrs)` })
+      const clash = (siblings as AgeGroupEntry[]).find((other) => (other.gender === 'Any' || values.gender === 'Any' || other.gender === values.gender) && mine.from <= groupYears(other).to && mine.to >= groupYears(other).from)
+      if (clash) context.addIssue({ code: 'custom', path: ['ageFrom'], message: `Overlaps ${clash.name} (${ageRangeLabel(clash)})` })
     })
   const sample = entry as SampleTypeEntry | null
   const age = entry as AgeGroupEntry | null
@@ -76,8 +81,10 @@ function MasterForm({ formId, kind, entry, siblings, onSubmit }: MasterFormProps
   const nextOrderNo = Math.max(0, ...(siblings as DepartmentEntry[]).map((sibling) => sibling.orderNo ?? 0)) + 1
   const { register, handleSubmit, control, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { name: entry?.name ?? '', container: sample?.container ?? '', cap: sample?.cap ?? CAP_COLORS[0], ageFrom: age?.ageFrom, ageTo: age?.ageTo, gender: age?.gender ?? 'Any', orderNo: isDepartment ? (department?.orderNo ?? nextOrderNo) : undefined },
+    defaultValues: { name: entry?.name ?? '', container: sample?.container ?? '', cap: sample?.cap ?? CAP_COLORS[0], ageUnit: age ? ageUnitOf(age) : 'Years', ageFrom: age?.ageFrom, ageTo: age?.ageTo, gender: age?.gender ?? 'Any', orderNo: isDepartment ? (department?.orderNo ?? nextOrderNo) : undefined },
   })
+  // The age boxes are labelled in whichever unit is picked.
+  const unitWord = (useWatch({ control, name: 'ageUnit' }) ?? 'Years').toLowerCase()
   return (
     <form id={formId} onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-3.5">
       <Field label="Name" required error={errors.name?.message}>
@@ -90,11 +97,26 @@ function MasterForm({ formId, kind, entry, siblings, onSubmit }: MasterFormProps
       )}
       {isAge && (
         <>
+          <Field label="Age unit" required error={errors.ageUnit?.message}>
+            {(field) => (
+              <Controller
+                control={control}
+                name="ageUnit"
+                render={({ field: input }) => (
+                  <Select {...field} {...input}>
+                    {AGE_UNITS.map((unit) => (
+                      <option key={unit}>{unit}</option>
+                    ))}
+                  </Select>
+                )}
+              />
+            )}
+          </Field>
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Age from (years)" required error={errors.ageFrom?.message}>
+            <Field label={`Age from (${unitWord})`} required error={errors.ageFrom?.message}>
               {(field) => <Input type="number" inputMode="numeric" min={0} className="font-mono" {...field} {...register('ageFrom', { valueAsNumber: true })} />}
             </Field>
-            <Field label="Age to (years)" required error={errors.ageTo?.message}>
+            <Field label={`Age to (${unitWord})`} required error={errors.ageTo?.message}>
               {(field) => <Input type="number" inputMode="numeric" min={0} className="font-mono" {...field} {...register('ageTo', { valueAsNumber: true })} />}
             </Field>
           </div>
@@ -210,7 +232,7 @@ function MasterList({ kind, title, singular, note }: (typeof CONFIG)[string]) {
                     <span className="block truncate font-semibold text-ink">{entry.name}</span>
                     <span className="block truncate text-xs text-ink-3">
                       {sample ? `${sample.container} · ` : ''}
-                      {age ? `${age.ageFrom}–${age.ageTo} yrs · ${age.gender === 'Any' ? 'Any gender' : age.gender} · ` : ''}
+                      {age ? `${ageRangeLabel(age)} · ${age.gender === 'Any' ? 'Any gender' : age.gender} · ` : ''}
                       {used} test{used === 1 ? '' : 's'}
                     </span>
                   </span>
@@ -275,7 +297,7 @@ function MasterList({ kind, title, singular, note }: (typeof CONFIG)[string]) {
           <p className="text-ink-2">
             {masterUsage(kind, deleting, tests) > 0 ? (
               <>
-                <strong className="text-ink">{deleting.name}</strong> is used by {masterUsage(kind, deleting, tests)} test{masterUsage(kind, deleting, tests) === 1 ? '' : 's'}. Change those tests in Test Management first.
+                <strong className="text-ink">{deleting.name}</strong> is used by {masterUsage(kind, deleting, tests)} test{masterUsage(kind, deleting, tests) === 1 ? '' : 's'}. Change those tests in Investigation Management first.
               </>
             ) : (
               <>

@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useLab, type PatientInput } from '../../data/store'
 import type { AgeGroupEntry } from '../../types'
-import { matchAgeGroups } from '../../utils/results'
+import { ageFits, ageRangeLabel, matchAgeGroups } from '../../utils/results'
 import { Field, Input, Select, Textarea } from '../ui/Field'
 
 function makeSchema(groups: AgeGroupEntry[]) {
@@ -19,8 +19,8 @@ function makeSchema(groups: AgeGroupEntry[]) {
     })
     .superRefine((values, context) => {
       const group = groups.find((entry) => entry.id === values.groupId)
-      if (group && (values.age < group.ageFrom || values.age > group.ageTo)) {
-        context.addIssue({ code: 'custom', path: ['groupId'], message: `${group.name} is for ${group.ageFrom}–${group.ageTo} yrs` })
+      if (group && !ageFits(values.age, group)) {
+        context.addIssue({ code: 'custom', path: ['groupId'], message: `${group.name} is for ${ageRangeLabel(group)}` })
       }
     })
 }
@@ -66,7 +66,7 @@ export function PatientForm({ formId, defaults, phoneLocked, onSubmit, footer }:
                 <option value="">Choose group</option>
                 {groups.map((group) => (
                   <option key={group.id} value={group.id}>
-                    {`${group.name}, ${group.ageFrom}–${group.ageTo} yrs`}
+                    {`${group.name}, ${ageRangeLabel(group)}`}
                   </option>
                 ))}
               </Select>

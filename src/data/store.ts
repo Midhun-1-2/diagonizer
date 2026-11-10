@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react'
-import type { Account, AgeGroupEntry, AppNotification, DepartmentEntry, Invoice, InvoiceItem, InvoiceMethod, LabSettings, LabState, LabTest, MasterEntry, Patient, Payment, PaymentMethod, SampleTypeEntry, SplitAmounts, SubTestResult } from '../types'
+import type { Account, AgeGroupEntry, AgeUnit, AppNotification, DepartmentEntry, Invoice, InvoiceItem, InvoiceMethod, LabSettings, LabState, LabTest, MasterEntry, Patient, Payment, PaymentMethod, SampleTypeEntry, SplitAmounts, SubTestResult } from '../types'
 import { computeTotals, invoiceNumber, PAYMENT_METHODS, statusFor, type TotalsInput } from '../utils/billing'
 import { toResult } from '../utils/results'
 import { createMasters, createSeed, DEFAULT_SETTINGS } from './seed'
@@ -123,7 +123,7 @@ function renameInTest(kind: MasterKind, test: LabTest, from: string, to: string)
 }
 
 /** Renaming carries through to tests. Saved invoices keep the names they were billed with. */
-export function saveMaster(kind: MasterKind, id: string | null, values: { name: string; container?: string; cap?: string; ageFrom?: number; ageTo?: number; gender?: string; orderNo?: number }) {
+export function saveMaster(kind: MasterKind, id: string | null, values: { name: string; container?: string; cap?: string; ageUnit?: AgeUnit; ageFrom?: number; ageTo?: number; gender?: string; orderNo?: number }) {
   const name = values.name.trim()
   setState((s) => {
     const list = s[kind] as (MasterEntry | SampleTypeEntry | AgeGroupEntry | DepartmentEntry)[]
@@ -132,7 +132,7 @@ export function saveMaster(kind: MasterKind, id: string | null, values: { name: 
       kind === 'sampleTypes'
         ? { container: values.container?.trim() ?? '', cap: values.cap ?? '#9aa5a0', liquid: (previous as SampleTypeEntry | undefined)?.liquid ?? '#8d1f2a' }
         : kind === 'ageGroups'
-          ? { ageFrom: values.ageFrom ?? 0, ageTo: values.ageTo ?? 120, gender: values.gender ?? 'Any' }
+          ? { ageUnit: values.ageUnit ?? 'Years', ageFrom: values.ageFrom ?? 0, ageTo: values.ageTo ?? 120, gender: values.gender ?? 'Any' }
           : kind === 'categories'
             ? { orderNo: values.orderNo ?? list.length + 1 }
             : {}

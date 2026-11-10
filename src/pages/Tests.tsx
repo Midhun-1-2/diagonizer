@@ -144,7 +144,7 @@ export default function Tests() {
   return (
     <div className="mx-auto max-w-[1500px] px-3 md:px-6">
       <PageHero
-        title="Test Management"
+        title="Investigation Management"
         subtitle={`${tests.length} investigations across ${counts.size} departments.`}
         actions={
           <Button variant="primary" onClick={() => setEditor({ test: null })}>

@@ -1,4 +1,4 @@
-import type { AgeGroupEntry, Gender, Invoice, SubTest, SubTestResult } from '../types'
+import type { AgeGroupEntry, AgeUnit, Gender, Invoice, SubTest, SubTestResult } from '../types'
 
 export type OrderStage = 'At lab' | 'Ready to collect' | 'Completed'
 
@@ -17,9 +17,31 @@ export function reportedAt(invoice: Invoice) {
   return finished.length > 0 ? finished.reduce((latest, date) => (date > latest ? date : latest)) : undefined
 }
 
+export const AGE_UNITS: AgeUnit[] = ['Years', 'Months', 'Days', 'Hours']
+
+const PER_YEAR: Record<AgeUnit, number> = { Years: 1, Months: 12, Days: 365, Hours: 8760 }
+const UNIT_SHORT: Record<AgeUnit, string> = { Years: 'yrs', Months: 'months', Days: 'days', Hours: 'hrs' }
+
+export const ageUnitOf = (group: { ageUnit?: AgeUnit }): AgeUnit => group.ageUnit ?? 'Years'
+
+/** A group's limits in years, so groups counted in different units can be compared. */
+export function groupYears(group: { ageUnit?: AgeUnit; ageFrom: number; ageTo: number }) {
+  const per = PER_YEAR[ageUnitOf(group)]
+  return { from: group.ageFrom / per, to: group.ageTo / per }
+}
+
+/** "0–12 yrs", "0–28 days". */
+export const ageRangeLabel = (group: { ageUnit?: AgeUnit; ageFrom: number; ageTo: number }) => `${group.ageFrom}–${group.ageTo} ${UNIT_SHORT[ageUnitOf(group)]}`
+
+/** Patients are recorded in whole years, so a group counted in smaller units fits only the first year of life. */
+export function ageFits(age: number, group: { ageUnit?: AgeUnit; ageFrom: number; ageTo: number }) {
+  const { from, to } = groupYears(group)
+  return age >= from && age <= to
+}
+
 /** Age groups that fit a patient, with gender-specific ones ahead of groups for any gender. */
 export function matchAgeGroups(patient: { age: number; gender: Gender }, groups: AgeGroupEntry[]) {
-  const fits = groups.filter((group) => patient.age >= group.ageFrom && patient.age <= group.ageTo && (group.gender === 'Any' || group.gender === patient.gender))
+  const fits = groups.filter((group) => ageFits(patient.age, group) && (group.gender === 'Any' || group.gender === patient.gender))
   return [...fits].sort((a, b) => Number(a.gender === 'Any') - Number(b.gender === 'Any'))
 }
 

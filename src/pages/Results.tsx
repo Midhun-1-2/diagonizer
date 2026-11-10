@@ -6,7 +6,7 @@ import { useToast } from '../contexts/ToastProvider'
 import { useMediaQuery } from '../hooks'
 import type { Invoice, Patient, SubTestResult } from '../types'
 import { ageAndGender, fmtDateTime, relativeTime } from '../utils/format'
-import { matchAgeGroups, rangeFlag, toResult } from '../utils/results'
+import { ageRangeLabel, matchAgeGroups, rangeFlag, toResult } from '../utils/results'
 import { Button } from '../components/ui/Button'
 import { EmptyState, PageHero, Panel } from '../components/ui/Common'
 import { Input, Segmented } from '../components/ui/Field'
@@ -66,7 +66,7 @@ function Worksheet({ invoice, patient, onDone, onBack }: { invoice: Invoice; pat
         <p className="text-[13px] text-ink-2">
           {patient ? `${ageAndGender(patient)} · ${patient.code} · ` : ''}Billed {fmtDateTime(invoice.date)}
         </p>
-        <p className="mt-1 text-[13px] font-semibold text-accent-text">{group ? `Normal ranges for ${group.name} (${group.ageFrom}–${group.ageTo} yrs)` : 'No patient group on this order'}</p>
+        <p className="mt-1 text-[13px] font-semibold text-accent-text">{group ? `Normal ranges for ${group.name} (${ageRangeLabel(group)})` : 'No patient group on this order'}</p>
       </Panel>
 
       {invoice.items.map((item, itemIndex) => (

@@ -22,7 +22,7 @@ export const NAV_ITEMS: NavItem[] = [
 ]
 
 export const MASTER_TABS = [
-  { path: '/master/tests', label: 'Test Management' },
+  { path: '/master/tests', label: 'Investigation Management' },
   { path: '/master/categories', label: 'Department Master' },
   { path: '/master/sample-types', label: 'Sample Type Master' },
   { path: '/master/units', label: 'Unit Master' },

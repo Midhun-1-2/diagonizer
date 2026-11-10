@@ -1,6 +1,6 @@
 import type { Invoice, LabSettings, Patient } from '../../types'
 import { ageAndGender, fmtDateTime } from '../../utils/format'
-import { rangeFlag, reportedAt } from '../../utils/results'
+import { ageRangeLabel, rangeFlag, reportedAt } from '../../utils/results'
 import { PaperHeader } from './PaperHeader'
 
 /** The lab report handed to the patient. Like the invoice, it stays black on white in every theme. */
@@ -26,7 +26,7 @@ export function ResultDocument({ invoice, patient, settings }: { invoice: Invoic
           {reported && <p className="text-xs">Reported {fmtDateTime(reported)}</p>}
           {group && (
             <p className="text-xs">
-              Normal ranges for {group.name} ({group.ageFrom}–{group.ageTo} yrs)
+              Normal ranges for {group.name} ({ageRangeLabel(group)})
             </p>
           )}
         </div>

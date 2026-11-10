@@ -1,6 +1,6 @@
 import { useLab } from '../../data/store'
 import type { Patient } from '../../types'
-import { isValidAge, matchAgeGroups } from '../../utils/results'
+import { ageRangeLabel, isValidAge, matchAgeGroups } from '../../utils/results'
 import { Field, Input, Select } from '../ui/Field'
 
 interface PatientGroupFieldsProps {
@@ -30,7 +30,7 @@ export function PatientGroupFields({ patient, age, groupId, showErrors, onAge, o
             <option value="">Choose group</option>
             {groups.map((group) => (
               <option key={group.id} value={group.id}>
-                {`${group.name}, ${group.ageFrom}–${group.ageTo} yrs`}
+                {`${group.name}, ${ageRangeLabel(group)}`}
               </option>
             ))}
           </Select>
