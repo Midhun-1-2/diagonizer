@@ -1,4 +1,4 @@
-import { Controller, useFieldArray, useForm } from 'react-hook-form'
+import { Controller, useFieldArray, useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Plus, Trash2 } from 'lucide-react'
@@ -28,10 +28,13 @@ function makeSchema(takenCodes: string[]) {
         .object({
           name: z.string().trim().min(1, 'Name the sub-test'),
           unit: z.string().trim(),
+          multiple: z.boolean().optional(),
+          price: z.number().min(0, 'Price cannot be negative').optional(),
           ranges: z.record(z.string(), z.string()).optional(),
           limits: z.record(z.string(), z.object({ min: z.string().optional(), max: z.string().optional() })).optional(),
         })
         .superRefine((subTest, context) => {
+          if (subTest.multiple && !(subTest.price && subTest.price > 0)) context.addIssue({ code: 'custom', path: ['price'], message: 'Enter the price for billing it alone' })
           // Shown under the group's boxes, so each message lands on that group's range.
           for (const id of new Set([...Object.keys(subTest.ranges ?? {}), ...Object.keys(subTest.limits ?? {})])) {
             const problem = rangeProblem(subTest.ranges?.[id] ?? '', subTest.limits?.[id])
@@ -59,6 +62,7 @@ export function TestForm({ formId, test, takenCodes, onSubmit }: TestFormProps) 
     defaultValues: test ?? { name: '', code: '', category: categories[0]?.name ?? '', sampleType: sampleTypes[0]?.name ?? '', description: '', active: true, subTests: [{ name: '', unit: '', ranges: {} }] },
   })
   const { fields, append, remove } = useFieldArray({ control, name: 'subTests' })
+  const subTests = useWatch({ control, name: 'subTests' })
 
   return (
     <form id={formId} onSubmit={handleSubmit(onSubmit)} noValidate className="grid grid-cols-6 gap-x-3 gap-y-3.5">
@@ -132,6 +136,28 @@ export function TestForm({ formId, test, takenCodes, onSubmit }: TestFormProps) 
               <IconButton label={`Remove sub-test ${index + 1}`} onClick={() => remove(index)}>
                 <Trash2 size={15} />
               </IconButton>
+              <div className="col-span-full flex flex-wrap items-start gap-x-4 gap-y-1.5 px-1">
+                <label className="flex min-h-9 cursor-pointer items-center gap-2 text-[13px] font-semibold text-ink">
+                  <input type="checkbox" className="size-4 accent-(--accent)" {...register(`subTests.${index}.multiple`)} />
+                  Multiple
+                  <span className="font-normal text-ink-3 max-sm:hidden">Can also be billed on its own</span>
+                </label>
+                {subTests?.[index]?.multiple && (
+                  <div className="w-36">
+                    <Input
+                      type="number"
+                      inputMode="decimal"
+                      min={0}
+                      placeholder="Price alone"
+                      aria-label={`Sub-test ${index + 1} price when billed alone`}
+                      aria-invalid={errors.subTests?.[index]?.price ? true : undefined}
+                      className="h-9! font-mono text-[13px]!"
+                      {...register(`subTests.${index}.price`, { setValueAs: (value) => (value === '' || value === undefined || value === null ? undefined : Number(value)) })}
+                    />
+                    {errors.subTests?.[index]?.price && <p className="mt-0.5 text-[11px] leading-tight font-medium text-danger">{errors.subTests[index]?.price?.message}</p>}
+                  </div>
+                )}
+              </div>
               {ageGroups.length > 0 && (
                 <div className="col-span-full mt-1 grid grid-cols-2 gap-x-2 gap-y-1.5 sm:grid-cols-3 lg:grid-cols-5">
                   {ageGroups.map((group) => (

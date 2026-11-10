@@ -53,6 +53,9 @@ export interface AgeGroupEntry extends MasterEntry {
 export interface SubTest {
   name: string
   unit: string
+  /** Ticked as Multiple: this sub-test can also be billed on its own, at its own price. */
+  multiple?: boolean
+  price?: number
   /** Normal range per age group, by age group id. */
   ranges?: Record<string, string>
   /** Lowest and highest result the lab can enter for each age group, by age group id. Blank means no limit. */

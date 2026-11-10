@@ -6,6 +6,7 @@ import { useToast } from '../contexts/ToastProvider'
 import { useMediaQuery } from '../hooks'
 import type { Invoice, Patient, SubTestResult } from '../types'
 import { ageAndGender, fmtDateTime, relativeTime } from '../utils/format'
+import { orderableTests } from '../utils/standalone'
 import { ageRangeLabel, entryProblem, matchAgeGroups, rangeFlag, toResult } from '../utils/results'
 import { Button } from '../components/ui/Button'
 import { EmptyState, PageHero, Panel } from '../components/ui/Common'
@@ -33,7 +34,7 @@ function Worksheet({ invoice, patient, onDone, onBack }: { invoice: Invoice; pat
   const [entries, setEntries] = useState<Record<string, SubTestResult[]>>(() =>
     Object.fromEntries(
       invoice.items.map((item) => {
-        const subTests = tests.find((test) => test.id === item.testId)?.subTests ?? []
+        const subTests = orderableTests(tests).find((test) => test.id === item.testId)?.subTests ?? []
         // Rows saved earlier still follow the owner's current Min and Max.
         const rows = item.results?.map((row) => {
           const limits = toResult(subTests.find((sub) => sub.name === row.name) ?? { name: row.name, unit: row.unit }, group)

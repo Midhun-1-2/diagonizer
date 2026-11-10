@@ -6,6 +6,7 @@ import { useMoney } from '../../hooks'
 import type { AgeGroupEntry, LabTest } from '../../types'
 import { formatTat } from '../../utils/format'
 import { rangeSummary } from '../../utils/results'
+import { orderableTests } from '../../utils/standalone'
 import { EmptyState } from '../ui/Common'
 import { SearchInput } from '../ui/Field'
 import { CapDot, sampleMeta } from '../ui/Tube'
@@ -110,7 +111,7 @@ export function TestPicker({ selectedIds, onToggle, searchRef, group }: TestPick
   const [department, setDepartment] = useState<string>(categories[0]?.name ?? '')
   const [query, setQuery] = useState('')
 
-  const active = useMemo(() => tests.filter((t) => t.active), [tests])
+  const active = useMemo(() => orderableTests(tests).filter((t) => t.active), [tests])
   const departments = useMemo(() => {
     const names = [...categories.map((category) => category.name), ...active.map((t) => t.category)]
     return [...new Set(names)].map((name) => ({ name, total: active.filter((t) => t.category === name).length, picked: active.filter((t) => t.category === name && selectedIds.has(t.id)).length }))
