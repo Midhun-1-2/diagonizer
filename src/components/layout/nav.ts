@@ -1,4 +1,4 @@
-import { BarChart3, Database, Gauge, Microscope, ReceiptIndianRupee, ScrollText, Settings, UsersRound, type LucideIcon } from 'lucide-react'
+import { BarChart3, Database, Gauge, HandCoins, Microscope, ReceiptIndianRupee, ScrollText, Settings, UsersRound, type LucideIcon } from 'lucide-react'
 import type { Role } from '../../types'
 
 export interface NavItem {
@@ -13,6 +13,7 @@ export const NAV_ITEMS: NavItem[] = [
   { path: '/', label: 'Dashboard', icon: Gauge, roles: ['owner', 'billing', 'technical'] },
   { path: '/patients', label: 'Patients', icon: UsersRound, roles: ['owner', 'billing', 'technical'] },
   { path: '/billing', label: 'Billing', icon: ReceiptIndianRupee, roles: ['owner', 'billing'] },
+  { path: '/collections', label: 'Collections', icon: HandCoins, roles: ['owner', 'billing'] },
   { path: '/results', label: 'Lab Results', icon: Microscope, roles: ['owner', 'technical'] },
   { path: '/invoices', label: 'Invoices', icon: ScrollText, roles: ['owner', 'billing'] },
   { path: '/master', label: 'Master', icon: Database, roles: ['owner'] },

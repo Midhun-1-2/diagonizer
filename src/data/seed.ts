@@ -183,7 +183,7 @@ export function createSeed(): LabState {
   const waiting = invoices.flatMap((inv) => inv.items.filter((i) => i.reportStatus !== 'Ready').map(() => inv)).length
   const notifications: AppNotification[] = [
     { id: 'n1', title: 'Reports waiting for release', body: `${waiting} tests are still in the queue.`, at: new Date(now.getTime() - 8 * 60000).toISOString(), read: false, to: '/results', roles: ['owner', 'technical'] },
-    { id: 'n2', title: 'Outstanding balance', body: 'Some invoices from this week are not fully settled.', at: new Date(now.getTime() - 55 * 60000).toISOString(), read: false, to: '/invoices?stage=Ready to collect', roles: ['owner', 'billing'] },
+    { id: 'n2', title: 'Outstanding balance', body: 'Some invoices from this week are not fully settled.', at: new Date(now.getTime() - 55 * 60000).toISOString(), read: false, to: '/collections', roles: ['owner', 'billing'] },
     { id: 'n3', title: 'Reagent check due', body: 'Biochemistry analyser QC is scheduled for today.', at: new Date(now.getTime() - 3.2 * 3600000).toISOString(), read: true, to: '/master/tests', roles: ['owner'] },
   ]
 

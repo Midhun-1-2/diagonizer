@@ -15,6 +15,7 @@ const Patients = lazy(() => import('./pages/Patients'))
 const Tests = lazy(() => import('./pages/Tests'))
 const Masters = lazy(() => import('./pages/Masters'))
 const Billing = lazy(() => import('./pages/Billing'))
+const Collections = lazy(() => import('./pages/Collections'))
 const Invoices = lazy(() => import('./pages/Invoices'))
 const Results = lazy(() => import('./pages/Results'))
 const Reports = lazy(() => import('./pages/Reports'))
@@ -67,6 +68,7 @@ export default function App() {
                   <Route path="master/:kind" element={<Masters />} />
                   <Route path="tests" element={<Navigate to="/master/tests" replace />} />
                   <Route path="billing" element={<Billing />} />
+                  <Route path="collections" element={<Collections />} />
                   <Route path="results" element={<Results />} />
                   <Route path="invoices" element={<Invoices />} />
                   <Route path="reports" element={<Reports />} />

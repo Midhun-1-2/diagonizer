@@ -7,7 +7,7 @@ import { LogoMark } from './Logo'
 import { sectionOf, type NavItem } from './nav'
 
 const ITEM = 52
-const PRIORITY = ['/billing', '/results', '/', '/patients', '/invoices', '/master', '/reports', '/settings']
+const PRIORITY = ['/billing', '/results', '/', '/patients', '/collections', '/invoices', '/master', '/reports', '/settings']
 
 /** Floating dock on tablet and up: icons magnify under the pointer and a capsule of liquid marks the section. */
 export function Dock({ items }: { items: NavItem[] }) {
@@ -94,7 +94,7 @@ export function PhoneBar({ items }: { items: NavItem[] }) {
                     className={`flex h-13 flex-col items-center justify-center gap-0.5 text-[10.5px] font-semibold transition-colors duration-200 ${active ? 'text-[#04211a]' : 'text-on-stage-2'}`}
                   >
                     <Icon size={19} strokeWidth={active ? 2.4 : 1.8} aria-hidden />
-                    {item.path === '/' ? 'Home' : item.path === '/results' ? 'Results' : item.label}
+                    {item.path === '/' ? 'Home' : item.path === '/results' ? 'Results' : item.path === '/collections' ? 'Collect' : item.label}
                   </NavLink>
                 </li>
               )

@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { ArrowRight, BellRing, ScrollText } from 'lucide-react'
+import { ArrowRight, ScrollText } from 'lucide-react'
 import { buildInvoice, createInvoice, peekInvoiceNumber, updatePatient, useLab, useSession, type InvoiceDraft } from '../data/store'
 import { useToast } from '../contexts/ToastProvider'
 import { useMoney } from '../hooks'
 import type { Invoice, LabTest, Patient } from '../types'
 import { computeTotals, EMPTY_SPLIT, invoiceNumber, splitAmounts, splitTotal } from '../utils/billing'
-import { isValidAge, matchAgeGroups, orderStage } from '../utils/results'
+import { isValidAge, matchAgeGroups } from '../utils/results'
 import { buttonClass, Button } from '../components/ui/Button'
 import { PageHero } from '../components/ui/Common'
 import { Readout } from '../components/ui/Readout'
@@ -29,7 +29,6 @@ const FRESH_SHEET: SheetValues = { discountType: 'percent', discountValue: 0, me
 export default function Billing() {
   const [params] = useSearchParams()
   const patients = useLab((state) => state.patients)
-  const invoices = useLab((state) => state.invoices)
   const settings = useLab((state) => state.settings)
   const ageGroups = useLab((state) => state.ageGroups)
   const lastInvoice = useLab((state) => state.sequence.invoice)
@@ -47,14 +46,11 @@ export default function Billing() {
   const [step, setStep] = useState<Step>('patient')
   const [saved, setSaved] = useState<Invoice | null>(null)
   const [preview, setPreview] = useState<Invoice | null>(null)
-  const [collecting, setCollecting] = useState<Invoice | null>(null)
   const [patientError, setPatientError] = useState(false)
   const phoneRef = useRef<HTMLInputElement>(null)
   const searchRef = useRef<HTMLInputElement>(null)
 
   const selectedIds = useMemo(() => new Set(lines.map((line) => line.id)), [lines])
-  const returned = useMemo(() => invoices.filter((invoice) => orderStage(invoice) === 'Ready to collect'), [invoices])
-  const names = useMemo(() => new Map(patients.map((p) => [p.id, p.name])), [patients])
   const taxRate = settings.taxEnabled ? settings.taxRate : 0
   const priced = lines.map((line) => ({ qty: quantities[line.id] ?? 1, price: line.price }))
   const grand = computeTotals({ lines: priced, discountType: sheet.discountType, discountValue: sheet.discountValue, taxRate, received: 0 }).total
@@ -213,31 +209,6 @@ export default function Billing() {
 
       <div className="grid min-w-0 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_372px] xl:grid-cols-[minmax(0,1fr)_408px]">
         <div className={`deal min-w-0 space-y-5 ${step === 'payment' ? 'max-lg:hidden' : ''}`}>
-          {returned.length > 0 && (
-            <section aria-label="Results back from the lab" className={`slab p-4 ${hide('patient')}`}>
-              <div className="mb-2 flex items-center justify-between gap-3">
-                <h2 className="flex items-center gap-2 font-display text-[15px] font-semibold text-ink">
-                  <BellRing size={16} className="text-accent-text" aria-hidden /> Results back, balance to collect
-                </h2>
-                <Link to="/invoices?stage=Ready to collect" className="-my-2 py-2 text-[13px] font-semibold text-accent-text hover:underline">
-                  All {returned.length}
-                </Link>
-              </div>
-              <ul className="-mx-1.5">
-                {returned.slice(0, 3).map((invoice) => (
-                  <li key={invoice.id}>
-                    <button type="button" onClick={() => setCollecting(invoice)} className="lift-row flex min-h-12 w-full items-center justify-between gap-3 rounded-xl px-2 py-1.5 text-left">
-                      <span className="min-w-0">
-                        <span className="block truncate text-[13px] font-semibold text-ink">{names.get(invoice.patientId)}</span>
-                        <span className="block truncate font-mono text-xs text-ink-3">{invoice.number}</span>
-                      </span>
-                      <span className="shrink-0 font-mono text-[13px] font-medium text-danger">{money(invoice.balance)}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
           <section aria-label="Patient" className={hide('patient')}>
             <PatientLookup patient={patient} onSelect={selectPatient} inputRef={phoneRef} error={patientError} />
             {patient && <PatientGroupFields patient={patient} age={age} groupId={groupId} showErrors={groupError} onAge={changeAge} onGroup={setGroupId} />}
@@ -277,7 +248,6 @@ export default function Billing() {
       )}
 
       <InvoiceViewer invoice={preview} draft onClose={() => setPreview(null)} />
-      <InvoiceViewer invoice={collecting} startPaying onClose={() => setCollecting(null)} />
       <InvoiceViewer
         invoice={saved}
         justSaved

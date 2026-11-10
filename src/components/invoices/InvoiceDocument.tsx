@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import type { Invoice, LabSettings, Patient } from '../../types'
 import { paymentLines } from '../../utils/billing'
 import { ageAndGender, fmtDateTime, money } from '../../utils/format'
-import { rangeFlag } from '../../utils/results'
+import { PaperHeader } from './PaperHeader'
 
 function Row({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
   return (
@@ -26,30 +26,7 @@ export function InvoiceDocument({ invoice, patient, settings, stamp }: InvoiceDo
   const discountLabel = invoice.discountType === 'percent' ? `Discount (${invoice.discountValue}%)` : 'Discount'
   return (
     <article className="relative bg-white p-5 text-[13px] leading-snug text-[#1b1f1d] sm:p-8 print:p-0" style={{ colorScheme: 'light' }}>
-      <header className="flex flex-wrap items-start justify-between gap-4 border-b-2 pb-4" style={{ borderColor: 'var(--paper-accent)' }}>
-        <div className="flex min-w-0 items-start gap-3">
-          {settings.logo ? (
-            <img src={settings.logo} alt="" className="size-14 object-contain" />
-          ) : (
-            <span className="grid size-14 shrink-0 place-items-center border border-dashed border-[#a9b0ac] text-[10px] font-semibold tracking-wider text-[#6e7672]">LOGO</span>
-          )}
-          <div className="min-w-0">
-            <p className="text-lg leading-tight font-bold">{settings.labName}</p>
-            <p className="text-xs text-[#5a635e]">{settings.tagline}</p>
-            <p className="mt-1 max-w-80 text-xs text-[#5a635e]">{settings.address}</p>
-            <p className="text-xs text-[#5a635e]">
-              {settings.phone} · {settings.email}
-            </p>
-          </div>
-        </div>
-        <div className="max-sm:w-full sm:text-right print:text-right">
-          <p className="text-[11px] font-bold tracking-[0.14em] uppercase" style={{ color: 'var(--paper-accent)' }}>
-            {invoice.taxRate > 0 ? 'Tax invoice' : 'Invoice'}
-          </p>
-          <p className="mt-0.5 font-mono text-sm font-medium">{invoice.number}</p>
-          <p className="text-xs text-[#5a635e]">{fmtDateTime(invoice.date)}</p>
-        </div>
-      </header>
+      <PaperHeader settings={settings} label={invoice.taxRate > 0 ? 'Tax invoice' : 'Invoice'} number={invoice.number} date={fmtDateTime(invoice.date)} />
 
       <section className="grid gap-4 py-4 xs:grid-cols-2 print:grid-cols-2">
         <div>
@@ -123,44 +100,6 @@ export function InvoiceDocument({ invoice, patient, settings, stamp }: InvoiceDo
           <div className="border-t border-[#1b1f1d] pt-1 text-xs font-semibold">Authorized signature</div>
         </div>
       </footer>
-
-      {invoice.items.some((item) => item.results?.some((row) => row.value.trim())) && (
-        <section className="mt-8 border-t-2 pt-4 print:break-before-page" style={{ borderColor: 'var(--paper-accent)' }}>
-          <p className="text-[11px] font-bold tracking-[0.14em] uppercase" style={{ color: 'var(--paper-accent)' }}>
-            Laboratory report
-          </p>
-          {invoice.items.map((item) => (
-            <div key={item.testId} className="mt-3 break-inside-avoid">
-              <p className="font-semibold">{item.name}</p>
-              <table className="mt-1 w-full border-collapse text-left text-xs">
-                <thead>
-                  <tr className="border-y border-[#1b1f1d] text-[10px] font-bold tracking-wider uppercase">
-                    <th scope="col" className="py-1 pr-2">Sub-test</th>
-                    <th scope="col" className="py-1 pr-2">Result</th>
-                    <th scope="col" className="py-1 pr-2">Unit</th>
-                    <th scope="col" className="py-1 text-right">Normal range</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(item.results ?? []).map((row) => {
-                    const flag = rangeFlag(row.value, row.range)
-                    return (
-                      <tr key={row.name} className="border-b border-[#dfe3e0]">
-                        <td className="py-1 pr-2">{row.name}</td>
-                        <td className={`py-1 pr-2 font-mono ${flag ? 'font-bold' : ''}`}>
-                          {row.value || '–'} {flag}
-                        </td>
-                        <td className="py-1 pr-2 text-[#5a635e]">{row.unit || '–'}</td>
-                        <td className="py-1 text-right font-mono text-[#5a635e]">{row.range}</td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          ))}
-        </section>
-      )}
     </article>
   )
 }

@@ -2,17 +2,18 @@ import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { m } from 'motion/react'
 import { Download, IndianRupee, Lock, Printer } from 'lucide-react'
-import { recordPayment, useLab, useSession } from '../../data/store'
+import { getLab, recordPayment, useLab, useSession } from '../../data/store'
 import { useToast } from '../../contexts/ToastProvider'
 import { useMoney } from '../../hooks'
 import type { Invoice, PaymentMethod } from '../../types'
 import { PAYMENT_METHODS } from '../../utils/billing'
-import { downloadInvoicePdf } from '../../utils/pdf'
+import { downloadInvoicePdf, downloadResultPdf, resultFileName } from '../../utils/pdf'
 import { canRelease, orderStage } from '../../utils/results'
 import { Button } from '../ui/Button'
-import { Field, Input, Select } from '../ui/Field'
+import { Field, Input, Segmented, Select } from '../ui/Field'
 import { Modal } from '../ui/Modal'
 import { InvoiceDocument } from './InvoiceDocument'
+import { ResultDocument } from './ResultDocument'
 
 function PaymentForm({ invoice, onDone }: { invoice: Invoice; onDone: () => void }) {
   const [amount, setAmount] = useState(String(invoice.balance))
@@ -90,31 +91,43 @@ export function InvoiceViewer({ invoice, onClose, justSaved, draft, startPaying,
   const session = useSession()
   const [payingOverride, setPaying] = useState<boolean | null>(null)
   const paying = payingOverride ?? Boolean(startPaying)
+  const [view, setView] = useState<'invoice' | 'result'>('invoice')
   const toast = useToast()
 
   const close = () => {
     setPaying(null)
+    setView('invoice')
     onClose()
-  }
-
-  const download = async () => {
-    if (!current || !patient) return
-    await downloadInvoicePdf(current, patient, settings)
-    toast({ tone: 'success', title: 'PDF downloaded', body: `${current.number.replaceAll('/', '-')}.pdf` })
   }
 
   const ready = Boolean(current && patient)
   const handlesMoney = session?.role !== 'technical'
   const released = Boolean(current && !draft && canRelease(current) && handlesMoney)
+  const showResult = released && view === 'result'
   const stage = current ? orderStage(current) : 'At lab'
-  const lockNote = stage === 'At lab' ? 'Print unlocks after lab results and full payment.' : 'Print unlocks once the full amount is collected.'
+  const lockNote = stage === 'At lab' ? 'Result and invoice unlock after lab results and full payment.' : 'Result and invoice unlock once the full amount is collected.'
+
+  const download = async () => {
+    if (!current || !patient) return
+    if (showResult) await downloadResultPdf(current, patient, settings)
+    else await downloadInvoicePdf(current, patient, settings)
+    toast({ tone: 'success', title: 'PDF downloaded', body: showResult ? resultFileName(current) : `${current.number.replaceAll('/', '-')}.pdf` })
+  }
+
+  // The last payment is what releases the result, so that is what staff want to see next.
+  const paymentDone = () => {
+    setPaying(false)
+    const after = getLab().invoices.find((inv) => inv.id === current?.id)
+    if (after && canRelease(after)) setView('result')
+  }
+
   return (
     <>
       <Modal
         open={ready}
         onClose={close}
         size="lg"
-        title={draft ? 'Invoice preview' : justSaved ? 'Bill saved and sent to lab' : `Invoice ${current?.number ?? ''}`}
+        title={draft ? 'Invoice preview' : justSaved ? 'Bill saved and sent to lab' : `${showResult ? 'Result' : 'Invoice'} ${current?.number ?? ''}`}
         subtitle={draft ? `Draft number ${current?.number ?? ''}. Nothing is saved until you press Save.` : justSaved ? current?.number : undefined}
         footer={
           <>
@@ -126,10 +139,10 @@ export function InvoiceViewer({ invoice, onClose, justSaved, draft, startPaying,
             {released ? (
               <>
                 <Button onClick={download}>
-                  <Download size={15} aria-hidden /> PDF
+                  <Download size={15} aria-hidden /> {showResult ? 'Download result' : 'Download invoice'}
                 </Button>
-                <Button onClick={() => window.print()}>
-                  <Printer size={15} aria-hidden /> Print
+                <Button variant={showResult ? 'primary' : 'secondary'} onClick={() => window.print()}>
+                  <Printer size={15} aria-hidden /> {showResult ? 'Print result' : 'Print invoice'}
                 </Button>
               </>
             ) : (
@@ -149,6 +162,20 @@ export function InvoiceViewer({ invoice, onClose, justSaved, draft, startPaying,
             <div className="-mx-5 -my-4 overflow-hidden bg-surface-2">
               {/* The thin dark line is the printer slot; the sheet feeds out from under it. */}
               {justSaved && <div aria-hidden className="relative z-10 h-1 bg-ink shadow-[0_3px_6px_rgb(0_0_0/0.35)]" />}
+              {released && (
+                <div className="border-b border-line bg-surface px-5 py-2.5">
+                  <Segmented<'invoice' | 'result'>
+                    label="Document to view"
+                    value={view}
+                    onChange={setView}
+                    className="flex w-full sm:w-72"
+                    options={[
+                      { value: 'invoice', label: 'Invoice' },
+                      { value: 'result', label: 'Lab result' },
+                    ]}
+                  />
+                </div>
+              )}
               <m.div
                 key={current.id}
                 initial={justSaved ? { y: '-100%' } : false}
@@ -156,18 +183,18 @@ export function InvoiceViewer({ invoice, onClose, justSaved, draft, startPaying,
                 transition={{ duration: 0.66, ease: [0.3, 0.7, 0.2, 1] }}
                 className="mx-auto max-w-[720px] sm:my-3 sm:border sm:border-line"
               >
-                <InvoiceDocument invoice={current} patient={patient} settings={settings} stamp={!draft ? <Stamp status={current.status} /> : undefined} />
+                {showResult ? <ResultDocument invoice={current} patient={patient} settings={settings} /> : <InvoiceDocument invoice={current} patient={patient} settings={settings} stamp={!draft ? <Stamp status={current.status} /> : undefined} />}
               </m.div>
             </div>
           </>
         )}
         {paying && !draft && handlesMoney && current && current.balance > 0 && (
           <div className="sticky -bottom-4 -mx-5 -mb-4 mt-4">
-            <PaymentForm invoice={current} onDone={() => setPaying(false)} />
+            <PaymentForm invoice={current} onDone={paymentDone} />
           </div>
         )}
       </Modal>
-      {released && current && patient && createPortal(<InvoiceDocument invoice={current} patient={patient} settings={settings} />, document.getElementById('print-root')!)}
+      {released && current && patient && createPortal(showResult ? <ResultDocument invoice={current} patient={patient} settings={settings} /> : <InvoiceDocument invoice={current} patient={patient} settings={settings} />, document.getElementById('print-root')!)}
     </>
   )
 }

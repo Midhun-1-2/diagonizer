@@ -17,6 +17,7 @@ const STATION_X: Record<string, number> = {
   '/reports': SPACING * 5,
   '/settings': SPACING * 6,
   '/results': SPACING * 7,
+  '/collections': SPACING * 8,
 }
 
 const stationX = (path: string) => STATION_X[path] ?? 0
@@ -157,6 +158,22 @@ function buildWorld(tier: Tier) {
     const scope = makeMicroscope()
     station('/results', scope, (t) => {
       scope.rotation.y = 0.5 + Math.sin(t * 0.22) * 0.3
+    })
+  }
+
+  // Collections: a round flask beside an amber-capped tube, the order waiting to be settled.
+  {
+    const group = new THREE.Group()
+    const flask = makeRoundFlask()
+    flask.scale.setScalar(0.95)
+    const tube = makeTube('#d9a521').group
+    tube.position.set(2.4, -1.1, 0.6)
+    tube.rotation.z = -0.3
+    group.add(flask, tube)
+    station('/collections', group, (t) => {
+      flask.rotation.y = t * 0.12
+      flask.position.y = Math.sin(t * 0.55) * 0.08
+      tube.position.y = -1.1 + Math.sin(t * 0.8) * 0.08
     })
   }
 

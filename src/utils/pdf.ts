@@ -1,24 +1,22 @@
 import type { Invoice, LabSettings, Patient } from '../types'
 import { paymentLines } from './billing'
 import { ageAndGender, fmtDateTime } from './format'
-import { rangeFlag } from './results'
+import { rangeFlag, reportedAt } from './results'
+
+const left = 44
+const right = 551
 
 /** jsPDF is imported on demand so it never weighs on the initial load. */
-export async function downloadInvoicePdf(invoice: Invoice, patient: Patient, settings: LabSettings) {
+async function newPaper() {
   const { jsPDF } = await import('jspdf')
   const doc = new jsPDF({ unit: 'pt', format: 'a4' })
   const accent = getComputedStyle(document.documentElement).getPropertyValue('--paper-accent').trim() || '#0f6b4f'
-  // The built-in PDF fonts have no rupee glyph, so amounts print the ISO code: "INR 1,250.00".
-  const number = new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-  const format = (value: number) => `${settings.currency} ${number.format(value)}`
+  return { doc, accent, ink: () => doc.setTextColor('#1b1f1d'), muted: () => doc.setTextColor('#5a635e') }
+}
 
-  const left = 44
-  const right = 551
-  let y = 52
-
-  const ink = () => doc.setTextColor('#1b1f1d')
-  const muted = () => doc.setTextColor('#5a635e')
-
+/** Draws the lab's letterhead and returns where the page continues. */
+function letterhead({ doc, accent, ink, muted }: Awaited<ReturnType<typeof newPaper>>, settings: LabSettings, label: string, number: string, date: string) {
+  const y = 52
   if (settings.logo) {
     try {
       doc.addImage(settings.logo, left, y - 12, 44, 44)
@@ -50,21 +48,30 @@ export async function downloadInvoicePdf(invoice: Invoice, patient: Patient, set
   doc.setTextColor(accent)
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(9)
-  doc.text(invoice.taxRate > 0 ? 'TAX INVOICE' : 'INVOICE', right, y, { align: 'right' })
+  doc.text(label, right, y, { align: 'right' })
   ink()
   doc.setFont('courier', 'bold')
   doc.setFontSize(10)
-  doc.text(invoice.number, right, y + 14, { align: 'right' })
+  doc.text(number, right, y + 14, { align: 'right' })
   muted()
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(8.5)
-  doc.text(fmtDateTime(invoice.date), right, y + 26, { align: 'right' })
+  doc.text(date, right, y + 26, { align: 'right' })
 
-  y += 58
   doc.setDrawColor(accent)
   doc.setLineWidth(1.5)
-  doc.line(left, y, right, y)
+  doc.line(left, y + 58, right, y + 58)
+  return y + 58
+}
 
+export async function downloadInvoicePdf(invoice: Invoice, patient: Patient, settings: LabSettings) {
+  const paper = await newPaper()
+  const { doc, ink, muted } = paper
+  // The built-in PDF fonts have no rupee glyph, so amounts print the ISO code: "INR 1,250.00".
+  const number = new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  const format = (value: number) => `${settings.currency} ${number.format(value)}`
+
+  let y = letterhead(paper, settings, invoice.taxRate > 0 ? 'TAX INVOICE' : 'INVOICE', invoice.number, fmtDateTime(invoice.date))
   y += 20
   muted()
   doc.setFont('helvetica', 'bold')
@@ -187,59 +194,105 @@ export async function downloadInvoicePdf(invoice: Invoice, patient: Patient, set
   doc.setFontSize(7.5)
   doc.text('Please bring this invoice when collecting printed reports.', left, y + 12)
 
-  if (invoice.items.some((item) => item.results?.some((row) => row.value.trim()))) {
-    doc.addPage()
-    y = 52
-    doc.setTextColor(accent)
+  doc.save(`${invoice.number.replaceAll('/', '-')}.pdf`)
+}
+
+export const resultFileName = (invoice: Invoice) => `Result-${invoice.number.replaceAll('/', '-')}.pdf`
+
+export async function downloadResultPdf(invoice: Invoice, patient: Patient, settings: LabSettings) {
+  const paper = await newPaper()
+  const { doc, ink, muted } = paper
+  // The built-in PDF fonts lack these characters.
+  const plain = (text: string) => text.replaceAll('–', '-').replaceAll('⁴', '^4').replaceAll('µ', 'u').replaceAll('·', '-')
+
+  let y = letterhead(paper, settings, 'LABORATORY REPORT', invoice.number, fmtDateTime(invoice.date))
+  y += 20
+  muted()
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(7.5)
+  doc.text('PATIENT', left, y)
+  doc.text('REPORT', right, y, { align: 'right' })
+  y += 13
+  ink()
+  doc.setFontSize(11)
+  doc.text(patient.name, left, y)
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(8.5)
+  doc.text(`Billed ${fmtDateTime(invoice.date)}`, right, y, { align: 'right' })
+  y += 13
+  doc.setFontSize(9)
+  doc.text(ageAndGender(patient), left, y)
+  doc.setFontSize(8.5)
+  const reported = reportedAt(invoice)
+  if (reported) doc.text(`Reported ${fmtDateTime(reported)}`, right, y, { align: 'right' })
+  y += 12
+  doc.setFont('courier', 'normal')
+  doc.text(`${patient.code}  ${patient.phone}`, left, y)
+  doc.setFont('helvetica', 'normal')
+  const group = invoice.ageGroup
+  if (group) doc.text(`Normal ranges for ${group.name} (${group.ageFrom}-${group.ageTo} yrs)`, right, y, { align: 'right' })
+  y += 28
+
+  const subTestWidth = 205
+  for (const item of invoice.items) {
+    if (y > 720) {
+      doc.addPage()
+      y = 52
+    }
+    ink()
     doc.setFont('helvetica', 'bold')
-    doc.setFontSize(11)
-    doc.text('LABORATORY REPORT', left, y)
-    muted()
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(8.5)
-    doc.text(`${patient.name}  |  ${patient.code}  |  ${invoice.number}`, left, y + 14)
-    y += 36
-    for (const item of invoice.items) {
-      if (y > 720) {
+    doc.setFontSize(10)
+    doc.text(plain(item.name), left, y)
+    y += 14
+    doc.setFontSize(7.5)
+    doc.text('SUB-TEST', left, y)
+    doc.text('RESULT', 260, y)
+    doc.text('UNIT', 360, y)
+    doc.text('NORMAL RANGE', right, y, { align: 'right' })
+    doc.setDrawColor('#1b1f1d')
+    doc.setLineWidth(0.6)
+    doc.line(left, y + 4, right, y + 4)
+    y += 15
+    for (const row of item.results ?? []) {
+      if (y > 780) {
         doc.addPage()
         y = 52
       }
+      const flag = rangeFlag(row.value, row.range)
       ink()
-      doc.setFont('helvetica', 'bold')
-      doc.setFontSize(10)
-      doc.text(item.name, left, y)
-      y += 14
-      doc.setFontSize(7.5)
-      doc.text('SUB-TEST', left, y)
-      doc.text('RESULT', 260, y)
-      doc.text('UNIT', 360, y)
-      doc.text('NORMAL RANGE', right, y, { align: 'right' })
-      doc.setDrawColor('#1b1f1d')
-      doc.setLineWidth(0.6)
-      doc.line(left, y + 4, right, y + 4)
-      y += 15
-      for (const row of item.results ?? []) {
-        if (y > 780) {
-          doc.addPage()
-          y = 52
-        }
-        const flag = rangeFlag(row.value, row.range)
-        ink()
-        doc.setFont('helvetica', 'normal')
-        doc.setFontSize(9)
-        doc.text(row.name, left, y)
-        doc.setFont('courier', flag ? 'bold' : 'normal')
-        doc.text(`${row.value || '-'} ${flag}`, 260, y)
-        muted()
-        doc.setFont('helvetica', 'normal')
-        doc.text(row.unit.replace('µ', 'u') || '-', 360, y)
-        doc.setFont('courier', 'normal')
-        doc.text(row.range.replace('–', '-').replace('⁴', '^4'), right, y, { align: 'right' })
-        y += 14
-      }
-      y += 10
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(9)
+      const name: string[] = doc.splitTextToSize(plain(row.name), subTestWidth)
+      doc.text(name, left, y)
+      doc.setFont('courier', flag ? 'bold' : 'normal')
+      const value: string[] = doc.splitTextToSize(`${plain(row.value) || '-'} ${flag}`.trim(), 92)
+      doc.text(value, 260, y)
+      muted()
+      doc.setFont('helvetica', 'normal')
+      doc.text(plain(row.unit) || '-', 360, y)
+      doc.setFont('courier', 'normal')
+      doc.text(plain(row.range) || '-', right, y, { align: 'right' })
+      y += 14 + (Math.max(name.length, value.length) - 1) * 10
     }
+    y += 10
   }
 
-  doc.save(`${invoice.number.replaceAll('/', '-')}.pdf`)
+  if (y > 730) {
+    doc.addPage()
+    y = 52
+  }
+  y += 40
+  doc.setDrawColor('#1b1f1d')
+  doc.setLineWidth(0.8)
+  doc.line(right - 130, y, right, y)
+  ink()
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(8.5)
+  doc.text('Authorized signature', right - 65, y + 12, { align: 'center' })
+  muted()
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(7.5)
+  doc.text('H is above the normal range. L is below it.', left, y + 12)
+
+  doc.save(resultFileName(invoice))
 }

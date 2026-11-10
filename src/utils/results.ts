@@ -11,6 +11,12 @@ export function orderStage(invoice: Invoice): OrderStage {
 /** Print and download stay locked until results are back and the full amount is collected. */
 export const canRelease = (invoice: Invoice) => orderStage(invoice) === 'Completed'
 
+/** When the last test on the order was finished. */
+export function reportedAt(invoice: Invoice) {
+  const finished = invoice.items.map((item) => item.completedAt).filter((date): date is string => Boolean(date))
+  return finished.length > 0 ? finished.reduce((latest, date) => (date > latest ? date : latest)) : undefined
+}
+
 /** Age groups that fit a patient, with gender-specific ones ahead of groups for any gender. */
 export function matchAgeGroups(patient: { age: number; gender: Gender }, groups: AgeGroupEntry[]) {
   const fits = groups.filter((group) => patient.age >= group.ageFrom && patient.age <= group.ageTo && (group.gender === 'Any' || group.gender === patient.gender))
