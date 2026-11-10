@@ -6,7 +6,7 @@ import { z } from 'zod'
 import { Check, ListChecks, Pencil, Plus, Trash2 } from 'lucide-react'
 import { deleteMaster, masterUsage, saveMaster, useLab, type MasterKind } from '../data/store'
 import { useToast } from '../contexts/ToastProvider'
-import type { AgeGroupEntry, MasterEntry, SampleTypeEntry } from '../types'
+import type { AgeGroupEntry, DepartmentEntry, MasterEntry, SampleTypeEntry } from '../types'
 import { Button, IconButton } from '../components/ui/Button'
 import { EmptyState, PageHero, Panel } from '../components/ui/Common'
 import { Field, Input, SearchInput, Select } from '../components/ui/Field'
@@ -14,7 +14,7 @@ import { Modal } from '../components/ui/Modal'
 import { MasterTabs } from '../components/tests/MasterTabs'
 
 const CONFIG: Record<string, { kind: MasterKind; title: string; singular: string; note: string; placeholder: string }> = {
-  categories: { kind: 'categories', title: 'Category Master', singular: 'category', note: 'Departments that tests belong to.', placeholder: 'For example, Histopathology' },
+  categories: { kind: 'categories', title: 'Department Master', singular: 'department', note: 'Departments that tests belong to. The order no. sets the order they are listed in.', placeholder: 'For example, Histopathology' },
   'sample-types': { kind: 'sampleTypes', title: 'Sample Type Master', singular: 'sample type', note: 'Containers and cap colours shown across billing and the lab.', placeholder: 'For example, Heparin Plasma' },
   units: { kind: 'units', title: 'Unit Master', singular: 'unit', note: 'Measurement units offered in each sub-test dropdown.', placeholder: 'For example, mg/dL' },
   'age-groups': { kind: 'ageGroups', title: 'Age Group Master', singular: 'age group', note: 'Age ranges linked to a gender. Each one gets its own normal range box in every test.', placeholder: 'For example, Adult Female' },
@@ -29,6 +29,7 @@ interface FormValues {
   ageFrom?: number
   ageTo?: number
   gender: string
+  orderNo?: number
 }
 
 interface MasterFormProps {
@@ -42,6 +43,7 @@ interface MasterFormProps {
 function MasterForm({ formId, kind, entry, siblings, onSubmit }: MasterFormProps) {
   const isSample = kind === 'sampleTypes'
   const isAge = kind === 'ageGroups'
+  const isDepartment = kind === 'categories'
   const takenNames = siblings.map((sibling) => sibling.name.toLowerCase())
   const schema = z
     .object({
@@ -55,8 +57,10 @@ function MasterForm({ formId, kind, entry, siblings, onSubmit }: MasterFormProps
       ageFrom: z.number({ error: 'Enter the starting age' }).int('Use whole years').min(0, 'Age cannot be negative').optional(),
       ageTo: z.number({ error: 'Enter the ending age' }).int('Use whole years').max(150, 'Use 150 or less').optional(),
       gender: z.string(),
+      orderNo: z.number({ error: 'Enter the order no.' }).int('Use a whole number').min(1, 'Start from 1').max(999, 'Use 999 or less').optional(),
     })
     .superRefine((values, context) => {
+      if (isDepartment && values.orderNo === undefined) context.addIssue({ code: 'custom', path: ['orderNo'], message: 'Enter the order no.' })
       if (!isAge) return
       const from = values.ageFrom ?? 0
       const to = values.ageTo ?? 0
@@ -67,15 +71,23 @@ function MasterForm({ formId, kind, entry, siblings, onSubmit }: MasterFormProps
     })
   const sample = entry as SampleTypeEntry | null
   const age = entry as AgeGroupEntry | null
+  const department = entry as DepartmentEntry | null
+  // A new department goes to the end of the list unless staff pick another number.
+  const nextOrderNo = Math.max(0, ...(siblings as DepartmentEntry[]).map((sibling) => sibling.orderNo ?? 0)) + 1
   const { register, handleSubmit, control, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { name: entry?.name ?? '', container: sample?.container ?? '', cap: sample?.cap ?? CAP_COLORS[0], ageFrom: age?.ageFrom, ageTo: age?.ageTo, gender: age?.gender ?? 'Any' },
+    defaultValues: { name: entry?.name ?? '', container: sample?.container ?? '', cap: sample?.cap ?? CAP_COLORS[0], ageFrom: age?.ageFrom, ageTo: age?.ageTo, gender: age?.gender ?? 'Any', orderNo: isDepartment ? (department?.orderNo ?? nextOrderNo) : undefined },
   })
   return (
     <form id={formId} onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-3.5">
       <Field label="Name" required error={errors.name?.message}>
         {(field) => <Input data-autofocus {...field} {...register('name')} />}
       </Field>
+      {isDepartment && (
+        <Field label="Order no." required error={errors.orderNo?.message}>
+          {(field) => <Input type="number" inputMode="numeric" min={1} className="font-mono" {...field} {...register('orderNo', { valueAsNumber: true })} />}
+        </Field>
+      )}
       {isAge && (
         <>
           <div className="grid grid-cols-2 gap-3">
@@ -184,8 +196,15 @@ function MasterList({ kind, title, singular, note }: (typeof CONFIG)[string]) {
               const used = masterUsage(kind, entry, tests)
               const sample = kind === 'sampleTypes' ? (entry as SampleTypeEntry) : null
               const age = kind === 'ageGroups' ? (entry as AgeGroupEntry) : null
+              const department = kind === 'categories' ? (entry as DepartmentEntry) : null
               return (
                 <li key={entry.id} className="lift-row flex items-center gap-3 px-4" style={{ paddingBlock: 'var(--row-y)' }}>
+                  {department && (
+                    <span className="grid h-8 min-w-8 shrink-0 place-items-center rounded-lg bg-surface-2 px-1.5 font-mono text-[13px] font-semibold text-ink-2" title="Order no.">
+                      <span className="sr-only">Order no. </span>
+                      {department.orderNo}
+                    </span>
+                  )}
                   {sample && <span aria-hidden className="h-6 w-4 shrink-0 rounded-t-[4px] rounded-b-[2px] ring-1 ring-black/15" style={{ background: sample.cap }} />}
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-semibold text-ink">{entry.name}</span>

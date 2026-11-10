@@ -23,7 +23,7 @@ export const NAV_ITEMS: NavItem[] = [
 
 export const MASTER_TABS = [
   { path: '/master/tests', label: 'Test Management' },
-  { path: '/master/categories', label: 'Category Master' },
+  { path: '/master/categories', label: 'Department Master' },
   { path: '/master/sample-types', label: 'Sample Type Master' },
   { path: '/master/units', label: 'Unit Master' },
   { path: '/master/age-groups', label: 'Age Group Master' },

@@ -43,7 +43,7 @@ const toEntries = (names: readonly string[], prefix: string): MasterEntry[] => n
 export function createMasters() {
   const units = [...new Set(TEST_CATALOGUE.flatMap((test) => test.subTests.map((subTest) => subTest.unit)).filter(Boolean))]
   return {
-    categories: toEntries(CATEGORIES, 'cat'),
+    categories: toEntries(CATEGORIES, 'cat').map((entry, index) => ({ ...entry, orderNo: index + 1 })),
     sampleTypes: DEFAULT_SAMPLE_TYPES,
     units: toEntries(units, 'unit'),
     ageGroups: DEFAULT_AGE_GROUPS,

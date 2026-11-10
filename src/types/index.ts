@@ -29,6 +29,11 @@ export interface MasterEntry {
   name: string
 }
 
+/** Departments are listed in order number order wherever they appear. */
+export interface DepartmentEntry extends MasterEntry {
+  orderNo: number
+}
+
 export interface SampleTypeEntry extends MasterEntry {
   container: string
   cap: string
@@ -152,7 +157,7 @@ export interface AppNotification {
 export interface LabState {
   patients: Patient[]
   tests: LabTest[]
-  categories: MasterEntry[]
+  categories: DepartmentEntry[]
   sampleTypes: SampleTypeEntry[]
   units: MasterEntry[]
   ageGroups: AgeGroupEntry[]
