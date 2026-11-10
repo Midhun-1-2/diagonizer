@@ -111,9 +111,11 @@ export function toggleTest(id: string) {
   setState((s) => ({ tests: s.tests.map((t) => (t.id === id ? { ...t, active: !t.active } : t)) }))
 }
 
-export type MasterKind = 'categories' | 'sampleTypes' | 'units' | 'ageGroups'
+export type MasterKind = 'categories' | 'sampleTypes' | 'units' | 'ageGroups' | 'referrers'
 
-export function masterUsage(kind: MasterKind, entry: MasterEntry, tests: LabTest[]) {
+/** How many tests use this entry. Referrers are used by patients instead. */
+export function masterUsage(kind: MasterKind, entry: MasterEntry, tests: LabTest[], patients: Patient[] = []) {
+  if (kind === 'referrers') return patients.filter((patient) => patient.referredBy === entry.name).length
   if (kind === 'categories') return tests.filter((test) => test.category === entry.name).length
   if (kind === 'sampleTypes') return tests.filter((test) => test.sampleType === entry.name).length
   if (kind === 'ageGroups') return tests.filter((test) => test.subTests.some((subTest) => subTest.ranges?.[entry.id]?.trim())).length
@@ -146,7 +148,8 @@ export function saveMaster(kind: MasterKind, id: string | null, values: { name: 
     const next = kind === 'categories' ? inOrder(saved as DepartmentEntry[]) : saved
     return {
       [kind]: next,
-      tests: previous && previous.name !== name ? s.tests.map((test) => renameInTest(kind, test, previous.name, name)) : s.tests,
+      tests: previous && previous.name !== name && kind !== 'referrers' ? s.tests.map((test) => renameInTest(kind, test, previous.name, name)) : s.tests,
+      patients: previous && previous.name !== name && kind === 'referrers' ? s.patients.map((patient) => (patient.referredBy === previous.name ? { ...patient, referredBy: name } : patient)) : s.patients,
     }
   })
 }

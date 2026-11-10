@@ -46,6 +46,7 @@ export function createMasters() {
     categories: toEntries(CATEGORIES, 'cat').map((entry, index) => ({ ...entry, orderNo: index + 1 })),
     sampleTypes: DEFAULT_SAMPLE_TYPES,
     units: toEntries(units, 'unit'),
+    referrers: [] as MasterEntry[],
     ageGroups: DEFAULT_AGE_GROUPS,
   }
 }

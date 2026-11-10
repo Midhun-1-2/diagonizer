@@ -18,6 +18,13 @@ export interface Patient {
   phone: string
   email: string
   address: string
+  /** Date of birth as YYYY-MM-DD. Optional: age alone is enough to register. */
+  dob?: string
+  /** Name from the Referred By Master. Optional. */
+  referredBy?: string
+  bloodGroup?: string
+  country?: string
+  location?: string
   registeredAt: string
 }
 
@@ -172,6 +179,7 @@ export interface LabState {
   categories: DepartmentEntry[]
   sampleTypes: SampleTypeEntry[]
   units: MasterEntry[]
+  referrers: MasterEntry[]
   ageGroups: AgeGroupEntry[]
   invoices: Invoice[]
   settings: LabSettings

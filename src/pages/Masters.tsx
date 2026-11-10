@@ -18,6 +18,7 @@ const CONFIG: Record<string, { kind: MasterKind; title: string; singular: string
   categories: { kind: 'categories', title: 'Department Master', singular: 'department', note: 'Departments that tests belong to. The order no. sets the order they are listed in.', placeholder: 'For example, Histopathology' },
   'sample-types': { kind: 'sampleTypes', title: 'Sample Type Master', singular: 'sample type', note: 'Containers and cap colours shown across billing and the lab.', placeholder: 'For example, Heparin Plasma' },
   units: { kind: 'units', title: 'Unit Master', singular: 'unit', note: 'Measurement units offered in each sub-test dropdown.', placeholder: 'For example, mg/dL' },
+  'referred-by': { kind: 'referrers', title: 'Referred By Master', singular: 'referrer', note: 'Doctors, companies or people a patient can be referred by when registering. It is optional for every patient.', placeholder: 'For example, Dr. Nair' },
   'age-groups': { kind: 'ageGroups', title: 'Age Group Master', singular: 'age group', note: 'Age ranges linked to a gender. Each one gets its own normal range box in every test.', placeholder: 'For example, Adult Female' },
 }
 
@@ -174,6 +175,7 @@ export default function Masters() {
 function MasterList({ kind, title, singular, note }: (typeof CONFIG)[string]) {
   const entries = useLab((state) => state[kind])
   const tests = useLab((state) => state.tests)
+  const patients = useLab((state) => state.patients)
   const toast = useToast()
   const [query, setQuery] = useState('')
   const [editor, setEditor] = useState<{ entry: MasterEntry | null } | null>(null)
@@ -184,6 +186,9 @@ function MasterList({ kind, title, singular, note }: (typeof CONFIG)[string]) {
     return entries.filter((entry) => !term || entry.name.toLowerCase().includes(term))
   }, [entries, query])
 
+  // Referrers are used by patients, everything else by tests.
+  const noun = kind === 'referrers' ? 'patient' : 'test'
+  const usageOf = (entry: MasterEntry) => masterUsage(kind, entry, tests, patients)
   const siblings = entries.filter((entry) => entry.id !== editor?.entry?.id)
 
   const submit = (values: FormValues) => {
@@ -215,7 +220,7 @@ function MasterList({ kind, title, singular, note }: (typeof CONFIG)[string]) {
         ) : (
           <ul className="divide-y divide-line">
             {rows.map((entry) => {
-              const used = masterUsage(kind, entry, tests)
+              const used = usageOf(entry)
               const sample = kind === 'sampleTypes' ? (entry as SampleTypeEntry) : null
               const age = kind === 'ageGroups' ? (entry as AgeGroupEntry) : null
               const department = kind === 'categories' ? (entry as DepartmentEntry) : null
@@ -233,7 +238,7 @@ function MasterList({ kind, title, singular, note }: (typeof CONFIG)[string]) {
                     <span className="block truncate text-xs text-ink-3">
                       {sample ? `${sample.container} · ` : ''}
                       {age ? `${ageRangeLabel(age)} · ${age.gender === 'Any' ? 'Any gender' : age.gender} · ` : ''}
-                      {used} test{used === 1 ? '' : 's'}
+                      {used} {noun}{used === 1 ? '' : 's'}
                     </span>
                   </span>
                   <IconButton label={`Edit ${entry.name}`} onClick={() => setEditor({ entry })}>
@@ -254,7 +259,7 @@ function MasterList({ kind, title, singular, note }: (typeof CONFIG)[string]) {
         onClose={() => setEditor(null)}
         size="sm"
         title={editor?.entry ? `Edit ${editor.entry.name}` : `Add ${singular}`}
-        subtitle={editor?.entry ? 'Tests using this name are updated too.' : undefined}
+        subtitle={editor?.entry ? `${noun[0].toUpperCase()}${noun.slice(1)}s using this name are updated too.` : undefined}
         footer={
           <>
             <Button onClick={() => setEditor(null)}>Cancel</Button>
@@ -271,9 +276,9 @@ function MasterList({ kind, title, singular, note }: (typeof CONFIG)[string]) {
         open={Boolean(deleting)}
         onClose={() => setDeleting(null)}
         size="sm"
-        title={deleting && masterUsage(kind, deleting, tests) > 0 ? 'This is in use' : `Delete this ${singular}?`}
+        title={deleting && usageOf(deleting) > 0 ? 'This is in use' : `Delete this ${singular}?`}
         footer={
-          deleting && masterUsage(kind, deleting, tests) > 0 ? (
+          deleting && usageOf(deleting) > 0 ? (
             <Button onClick={() => setDeleting(null)}>Close</Button>
           ) : (
             <>
@@ -295,9 +300,9 @@ function MasterList({ kind, title, singular, note }: (typeof CONFIG)[string]) {
       >
         {deleting && (
           <p className="text-ink-2">
-            {masterUsage(kind, deleting, tests) > 0 ? (
+            {usageOf(deleting) > 0 ? (
               <>
-                <strong className="text-ink">{deleting.name}</strong> is used by {masterUsage(kind, deleting, tests)} test{masterUsage(kind, deleting, tests) === 1 ? '' : 's'}. Change those tests in Investigation Management first.
+                <strong className="text-ink">{deleting.name}</strong> is used by {usageOf(deleting)} {noun}{usageOf(deleting) === 1 ? '' : 's'}. Change those {noun}s {kind === 'referrers' ? 'first' : 'in Investigation Management first'}.
               </>
             ) : (
               <>
