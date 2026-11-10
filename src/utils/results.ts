@@ -51,7 +51,57 @@ export const isValidAge = (age: string) => /^\d{1,3}$/.test(age.trim()) && Numbe
 /** Starts a blank result with the normal range the owner set for this patient group. */
 export function toResult(subTest: SubTest, group: AgeGroupEntry | undefined, value = ''): SubTestResult {
   const range = group ? (subTest.ranges?.[group.id]?.trim() ?? '') : ''
-  return { name: subTest.name, unit: subTest.unit, range, rangeSource: range ? group?.name : undefined, value }
+  const limits = group ? subTest.limits?.[group.id] : undefined
+  return { name: subTest.name, unit: subTest.unit, range, rangeSource: range ? group?.name : undefined, min: limits?.min?.trim() || undefined, max: limits?.max?.trim() || undefined, value }
+}
+
+/** Splits a stored range into its From and To boxes. Text such as "Normal" has no boxes, so it comes back as text. */
+export function parseRange(range: string) {
+  const limits = range.trim().replace(/,/g, '')
+  const between = limits.match(/^(\d*\.?\d+)\s*[–-]\s*(\d*\.?\d+)$/)
+  if (between) return { from: between[1], to: between[2], text: '' }
+  const below = limits.match(/^<\s*(\d*\.?\d+)$/)
+  if (below) return { from: '', to: below[1], text: '' }
+  const above = limits.match(/^>\s*(\d*\.?\d+)$/)
+  if (above) return { from: above[1], to: '', text: '' }
+  return { from: '', to: '', text: range.trim() }
+}
+
+/** The stored form of the From and To boxes: "13.0 – 17.0", "< 200" or "> 40". */
+export function composeRange(from: string, to: string) {
+  const low = from.replace(/\.$/, '')
+  const high = to.replace(/\.$/, '')
+  if (low && high) return `${low} – ${high}`
+  if (high) return `< ${high}`
+  return low ? `> ${low}` : ''
+}
+
+const toNumber = (text: string | undefined) => (text?.trim() ? Number(text) : undefined)
+
+/** Why a sub-test's range and entry limits contradict each other, or an empty string when they agree. */
+export function rangeProblem(range: string, limits?: { min?: string; max?: string }) {
+  const { from, to } = parseRange(range)
+  const low = toNumber(from)
+  const high = toNumber(to)
+  const min = toNumber(limits?.min)
+  const max = toNumber(limits?.max)
+  if (low !== undefined && high !== undefined && low > high) return 'From must not be above To'
+  if (min !== undefined && max !== undefined && min > max) return 'Min must not be above Max'
+  const outside = (value: number | undefined) => value !== undefined && ((min !== undefined && value < min) || (max !== undefined && value > max))
+  return outside(low) || outside(high) ? 'Range must sit between Min and Max' : ''
+}
+
+/** Why a typed result is refused for this group, or an empty string. Only checked where the owner set a Min or Max. */
+export function entryProblem(row: Pick<SubTestResult, 'value' | 'min' | 'max'>) {
+  const min = toNumber(row.min)
+  const max = toNumber(row.max)
+  const typed = row.value.trim()
+  if ((min === undefined && max === undefined) || !typed) return ''
+  const value = Number(typed)
+  if (Number.isNaN(value)) return 'Enter a number'
+  if (min !== undefined && max !== undefined && (value < min || value > max)) return `Must be between ${row.min} and ${row.max}`
+  if (min !== undefined && value < min) return `Cannot be below ${row.min}`
+  return max !== undefined && value > max ? `Cannot be above ${row.max}` : ''
 }
 
 /** Range for one group, or a single line for all of them where no group is known yet. */

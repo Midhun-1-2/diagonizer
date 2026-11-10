@@ -55,6 +55,8 @@ export interface SubTest {
   unit: string
   /** Normal range per age group, by age group id. */
   ranges?: Record<string, string>
+  /** Lowest and highest result the lab can enter for each age group, by age group id. Blank means no limit. */
+  limits?: Record<string, { min?: string; max?: string }>
 }
 
 export interface LabTest {
@@ -84,6 +86,9 @@ export interface SubTestResult {
   range: string
   /** Age group the range came from. Left out when that group has no range for this sub-test. */
   rangeSource?: string
+  /** Entry limits for this patient group. A result outside them is refused. */
+  min?: string
+  max?: string
   value: string
 }
 

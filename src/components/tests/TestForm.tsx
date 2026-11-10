@@ -4,9 +4,10 @@ import { z } from 'zod'
 import { Plus, Trash2 } from 'lucide-react'
 import { useLab, type TestInput } from '../../data/store'
 import type { LabTest } from '../../types'
-import { ageRangeLabel } from '../../utils/results'
+import { rangeProblem } from '../../utils/results'
 import { Button, IconButton } from '../ui/Button'
 import { Field, Input, Select, Textarea } from '../ui/Field'
+import { RangeCell } from './RangeCell'
 
 function makeSchema(takenCodes: string[]) {
   return z.object({
@@ -22,7 +23,22 @@ function makeSchema(takenCodes: string[]) {
     tatHours: z.number({ error: 'Enter hours' }).min(1, 'Use at least 1 hour'),
     description: z.string().trim(),
     active: z.boolean(),
-    subTests: z.array(z.object({ name: z.string().trim().min(1, 'Name the sub-test'), unit: z.string().trim(), ranges: z.record(z.string(), z.string()).optional() })),
+    subTests: z.array(
+      z
+        .object({
+          name: z.string().trim().min(1, 'Name the sub-test'),
+          unit: z.string().trim(),
+          ranges: z.record(z.string(), z.string()).optional(),
+          limits: z.record(z.string(), z.object({ min: z.string().optional(), max: z.string().optional() })).optional(),
+        })
+        .superRefine((subTest, context) => {
+          // Shown under the group's boxes, so each message lands on that group's range.
+          for (const id of new Set([...Object.keys(subTest.ranges ?? {}), ...Object.keys(subTest.limits ?? {})])) {
+            const problem = rangeProblem(subTest.ranges?.[id] ?? '', subTest.limits?.[id])
+            if (problem) context.addIssue({ code: 'custom', path: ['ranges', id], message: problem })
+          }
+        }),
+    ),
   })
 }
 
@@ -119,22 +135,14 @@ export function TestForm({ formId, test, takenCodes, onSubmit }: TestFormProps) 
               {ageGroups.length > 0 && (
                 <div className="col-span-full mt-1 grid grid-cols-2 gap-x-2 gap-y-1.5 sm:grid-cols-3 lg:grid-cols-5">
                   {ageGroups.map((group) => (
-                    <label key={group.id} className="min-w-0">
-                      <span className="block truncate text-xs font-semibold text-ink-2" title={group.name}>
-                        {group.name}
-                      </span>
-                      <span className="block truncate text-[11px] text-ink-3">
-                        {ageRangeLabel(group)}, {group.gender === 'Any' ? 'any' : group.gender}
-                      </span>
-                      <Input aria-label={`Sub-test ${index + 1} normal range for ${group.name}`} placeholder="Range" className="mt-0.5 h-9! bg-surface! px-2.5! font-mono text-[13px]!" {...register(`subTests.${index}.ranges.${group.id}`)} />
-                    </label>
+                    <RangeCell key={group.id} control={control} index={index} group={group} error={errors.subTests?.[index]?.ranges?.[group.id]?.message} />
                   ))}
                 </div>
               )}
             </li>
           ))}
         </ul>
-        <Button size="sm" variant="ghost" className="mt-1.5" onClick={() => append({ name: '', unit: '', ranges: {} })}>
+        <Button size="sm" variant="ghost" className="mt-1.5" onClick={() => append({ name: '', unit: '', ranges: {}, limits: {} })}>
           <Plus size={14} aria-hidden /> Add sub-test
         </Button>
       </fieldset>

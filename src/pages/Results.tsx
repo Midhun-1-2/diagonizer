@@ -6,7 +6,7 @@ import { useToast } from '../contexts/ToastProvider'
 import { useMediaQuery } from '../hooks'
 import type { Invoice, Patient, SubTestResult } from '../types'
 import { ageAndGender, fmtDateTime, relativeTime } from '../utils/format'
-import { ageRangeLabel, matchAgeGroups, rangeFlag, toResult } from '../utils/results'
+import { ageRangeLabel, entryProblem, matchAgeGroups, rangeFlag, toResult } from '../utils/results'
 import { Button } from '../components/ui/Button'
 import { EmptyState, PageHero, Panel } from '../components/ui/Common'
 import { Input, Segmented } from '../components/ui/Field'
@@ -32,10 +32,15 @@ function Worksheet({ invoice, patient, onDone, onBack }: { invoice: Invoice; pat
   const group = invoice.ageGroup ?? (patient ? matchAgeGroups(patient, ageGroups)[0] : undefined)
   const [entries, setEntries] = useState<Record<string, SubTestResult[]>>(() =>
     Object.fromEntries(
-      invoice.items.map((item) => [
-        item.testId,
-        item.results ?? (tests.find((test) => test.id === item.testId)?.subTests ?? []).map((sub) => toResult(sub, group)),
-      ]),
+      invoice.items.map((item) => {
+        const subTests = tests.find((test) => test.id === item.testId)?.subTests ?? []
+        // Rows saved earlier still follow the owner's current Min and Max.
+        const rows = item.results?.map((row) => {
+          const limits = toResult(subTests.find((sub) => sub.name === row.name) ?? { name: row.name, unit: row.unit }, group)
+          return { ...row, min: limits.min, max: limits.max }
+        })
+        return [item.testId, rows ?? subTests.map((sub) => toResult(sub, group))]
+      }),
     ),
   )
 
@@ -44,6 +49,11 @@ function Worksheet({ invoice, patient, onDone, onBack }: { invoice: Invoice; pat
   }
 
   const save = () => {
+    // A value outside the owner's Min and Max is refused, so a slipped digit never reaches the report.
+    if (Object.values(entries).some((rows) => rows.some((row) => entryProblem(row)))) {
+      toast({ tone: 'error', title: 'Some results are not valid', body: 'Fix the highlighted results, then save again.' })
+      return
+    }
     const outcome = saveResults(invoice.id, entries)
     if (outcome.complete) {
       toast({ tone: 'success', title: 'Results sent to billing', body: `${invoice.number} is back with billing staff.` })
@@ -88,21 +98,27 @@ function Worksheet({ invoice, patient, onDone, onBack }: { invoice: Invoice; pat
           </div>
           <ul className="divide-y divide-line md:divide-y-0">
             {(entries[item.testId] ?? []).map((row, index) => {
-              const flag = rangeFlag(row.value, row.range)
+              const problem = entryProblem(row)
+              const flag = problem ? '' : rangeFlag(row.value, row.range)
               return (
                 <li key={row.name} className="grid grid-cols-[minmax(0,1fr)_32px] items-center gap-x-2.5 gap-y-1.5 py-2.5 md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_72px_minmax(0,1fr)_32px] md:py-1">
                   <span className="text-[13px] font-medium text-ink">{row.name}</span>
                   <span className="md:order-last">
                     <FlagBadge flag={flag} />
                   </span>
-                  <Input aria-label={`${row.name} result`} value={row.value} placeholder="Result" onChange={(event) => update(item.testId, index, { value: event.target.value })} className={`col-span-2 font-mono md:col-span-1 ${flag ? 'font-semibold' : ''}`} />
+                  <div className="col-span-2 min-w-0 md:col-span-1">
+                    <Input aria-label={`${row.name} result`} aria-invalid={problem ? true : undefined} value={row.value} placeholder="Result" onChange={(event) => update(item.testId, index, { value: event.target.value })} className={`font-mono ${flag ? 'font-semibold' : ''}`} />
+                    {problem && <span className="mt-0.5 block text-[11px] leading-tight font-medium text-danger">{problem}</span>}
+                  </div>
                   <span className="col-span-2 text-xs text-ink-2 md:col-span-1">
                     {row.unit || '–'}
                     <span className="md:hidden"> · Normal range limit</span>
                   </span>
                   <div className="col-span-2 min-w-0 md:col-span-1">
                     <Input aria-label={`${row.name} normal range limit`} value={row.range} onChange={(event) => update(item.testId, index, { range: event.target.value })} className="font-mono" />
-                    <span className="mt-0.5 block truncate text-[11px] text-ink-3">{row.rangeSource ?? (row.range ? 'Saved range' : 'No range set for this group')}</span>
+                    <span className="mt-0.5 block truncate text-[11px] text-ink-3">{row.rangeSource ?? (row.range ? 'Saved range' : 'No range set for this group')}
+                      {(row.min || row.max) && ` · Allowed ${row.min ?? '…'} to ${row.max ?? '…'}`}
+                    </span>
                   </div>
                 </li>
               )
