@@ -97,6 +97,12 @@ export function saveTest(id: string | null, input: TestInput) {
   }))
 }
 
+/** Moves tests to another department. Saved invoices keep the department they were billed under. */
+export function moveTests(ids: string[], department: string) {
+  const moving = new Set(ids)
+  setState((s) => ({ tests: s.tests.map((test) => (moving.has(test.id) ? { ...test, category: department } : test)) }))
+}
+
 export function deleteTest(id: string) {
   setState((s) => ({ tests: s.tests.filter((t) => t.id !== id) }))
 }
