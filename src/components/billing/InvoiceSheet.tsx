@@ -1,4 +1,4 @@
-import { lazy, Suspense, useMemo } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, m } from 'motion/react'
 import { Eye, Minus, Plus, X } from 'lucide-react'
 import { useTheme } from '../../contexts/ThemeProvider'
@@ -55,13 +55,37 @@ function SumRow({ label, value, muted }: { label: string; value: string; muted?:
 function RackWindow({ lines }: { lines: LabTest[] }) {
   const { motion } = useTheme()
   const samples = useMemo(() => [...new Set(lines.map((line) => line.sampleType))].slice(0, 6) as SampleType[], [lines])
+  const [ready, setReady] = useState(false)
+
+  /*
+    Standing up this canvas (a second WebGL context, its environment map and the glass shaders)
+    blocks the main thread for 60 ms or more. Done as the page opens it landed in the middle of
+    the panels' own entrance (`.deal`, 0.7 s from a 0.14 s delay and a 55 ms stagger) and stuttered
+    it, on every visit to Billing. So it waits for that entrance to finish, then for an idle
+    moment. The window's box is already sized, so nothing moves when the rack arrives.
+  */
+  useEffect(() => {
+    let idleId = 0
+    const idle = window.requestIdleCallback as typeof window.requestIdleCallback | undefined
+    const timer = window.setTimeout(() => {
+      if (idle) idleId = idle(() => setReady(true), { timeout: 600 })
+      else setReady(true)
+    }, 1000)
+    return () => {
+      window.clearTimeout(timer)
+      if (idleId) window.cancelIdleCallback(idleId)
+    }
+  }, [])
+
   if (motion === 'reduced' || deviceTier() === 'off') return <TubeRack lines={lines} />
   return (
     <div className="m-3 mb-0 overflow-hidden rounded-2xl" style={{ background: 'linear-gradient(160deg, var(--stage-2), var(--stage-1))', boxShadow: 'inset 0 2px 8px rgb(0 0 0 / 0.5)' }}>
       <div className="h-36">
-        <Suspense fallback={null}>
-          <RackCanvas samples={samples} />
-        </Suspense>
+        {ready && (
+          <Suspense fallback={null}>
+            <RackCanvas samples={samples} />
+          </Suspense>
+        )}
       </div>
       <p className="truncate px-3 pb-2 text-xs text-on-stage-2">
         {samples.length === 0 ? 'Add tests and their tubes drop in here.' : samples.map((type) => sampleMeta(type).container).join(' · ')}
