@@ -163,6 +163,7 @@ export const peekInvoiceNumber = () => invoiceNumber(state.settings.invoicePrefi
 export interface InvoiceDraft extends Omit<TotalsInput, 'lines'> {
   patientId: string
   ageGroup: AgeGroupEntry
+  referredByDoctor?: string
   lines: LabTest[]
   quantities: Record<string, number>
   method: InvoiceMethod
@@ -201,6 +202,7 @@ export function buildInvoice(draft: InvoiceDraft, number: string, id: string): I
     number,
     patientId: draft.patientId,
     ageGroup: draft.ageGroup,
+    referredByDoctor: draft.referredByDoctor,
     date: now,
     items,
     subtotal: totals.subtotal,

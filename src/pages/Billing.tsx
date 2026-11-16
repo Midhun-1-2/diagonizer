@@ -9,6 +9,7 @@ import { computeTotals, EMPTY_SPLIT, invoiceNumber, splitAmounts, splitTotal } f
 import { isValidAge, matchAgeGroups } from '../utils/results'
 import { buttonClass, Button } from '../components/ui/Button'
 import { PageHero } from '../components/ui/Common'
+import { Field, Input } from '../components/ui/Field'
 import { Readout } from '../components/ui/Readout'
 import { InvoiceSheet, type SheetValues } from '../components/billing/InvoiceSheet'
 import { PatientGroupFields } from '../components/billing/PatientGroupFields'
@@ -40,6 +41,7 @@ export default function Billing() {
   const [age, setAge] = useState(() => (patient ? String(patient.age) : ''))
   const [groupId, setGroupId] = useState(() => (patient ? (matchAgeGroups(patient, ageGroups)[0]?.id ?? '') : ''))
   const [groupError, setGroupError] = useState(false)
+  const [doctor, setDoctor] = useState('')
   const [lines, setLines] = useState<LabTest[]>([])
   const [quantities, setQuantities] = useState<Record<string, number>>({})
   const [sheet, setSheet] = useState<SheetValues>(FRESH_SHEET)
@@ -64,6 +66,7 @@ export default function Billing() {
     setPatient(next)
     setPatientError(false)
     setGroupError(false)
+    setDoctor('')
     setAge(next ? String(next.age) : '')
     setGroupId(next ? (matchAgeGroups(next, ageGroups)[0]?.id ?? '') : '')
     // Phones stay on this step so staff see the age and patient group before moving on.
@@ -84,6 +87,7 @@ export default function Billing() {
     return {
       patientId: patient.id,
       ageGroup,
+      referredByDoctor: doctor.trim() || undefined,
       lines,
       quantities,
       discountType: sheet.discountType,
@@ -137,6 +141,7 @@ export default function Billing() {
     setAge('')
     setGroupId('')
     setGroupError(false)
+    setDoctor('')
     setLines([])
     setQuantities({})
     setSheet(FRESH_SHEET)
@@ -212,6 +217,13 @@ export default function Billing() {
           <section aria-label="Patient" className={hide('patient')}>
             <PatientLookup patient={patient} onSelect={selectPatient} inputRef={phoneRef} error={patientError} />
             {patient && <PatientGroupFields patient={patient} age={age} groupId={groupId} showErrors={groupError} onAge={changeAge} onGroup={setGroupId} />}
+            {patient && (
+              <div className="slab mt-3 p-4">
+                <Field label="Referred by doctor" hint="Optional. The doctor who sent this patient.">
+                  {(field) => <Input {...field} value={doctor} onChange={(event) => setDoctor(event.target.value)} placeholder="Doctor name" maxLength={80} autoComplete="off" />}
+                </Field>
+              </div>
+            )}
           </section>
           <section aria-label="Tests" className={hide('tests')}>
             <TestPicker selectedIds={selectedIds} onToggle={toggle} searchRef={searchRef} group={ageGroup} />

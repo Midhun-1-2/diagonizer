@@ -128,6 +128,8 @@ export interface Invoice {
   patientId: string
   /** Patient group chosen on the bill. It decides the normal ranges the lab sees. */
   ageGroup?: AgeGroupEntry
+  /** The doctor who referred the patient for this bill. Optional. */
+  referredByDoctor?: string
   date: string
   items: InvoiceItem[]
   subtotal: number
